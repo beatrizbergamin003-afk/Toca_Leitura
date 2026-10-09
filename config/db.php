@@ -40,4 +40,17 @@ function verificar_autenticacao() {
         exit;
     }
 }
+
+/**
+ * Bloqueia o acesso a páginas administrativas para quem não é administrador.
+ */
+function verificar_admin() {
+    iniciar_sessao();
+    
+    // Se não estiver logado ou se não for administrador, redireciona para o início
+    if (!isset($_SESSION['usuario_id']) || empty($_SESSION['is_admin'])) {
+        header("Location: index.php?erro=sem_permissao");
+        exit;
+    }
+}
 ?>

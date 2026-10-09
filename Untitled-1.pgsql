@@ -84,20 +84,5 @@ CREATE TABLE mensagens_contato (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP   -- Data e hora do envio
 );
 
--- ============================================================
--- DADOS INICIAIS DE TESTE (POVOAMENTO OBRIGATÓRIO/SUGERIDO)
--- ============================================================
+-- 
 
--- Inserindo alguns livros para a loja (compras.php) e busca (procurar.php) não ficarem vazias de ROMANCE
-INSERT INTO livros (titulo, autor, editora, genero, preco, estrelas, capa_url, total_leitores) VALUES
-('Táticas do Amor', 'Sarah Adams', 'Intrínseca', 'Romance', 49.90, 5, 'https://imgs.search.brave.com/iYJ2VMRB1ZtWRAy0BCkoqtPMHL_mB6ykEjii3b4f8dA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NDFlSjBsU2d0MUwu/anBn', 2300),
-('Parte do Seu Mundo', 'Abby Jimenez', 'Arqueiro', 'Romance', 54.90, 5, 'https://imgs.search.brave.com/1MH-6EHn8_m7ZcaDsn8iFU7IH2Y0Xdf3J7EqDdwzPCI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NDFsQ2wxT1N6Y0wu/anBn', 1850),
-('Nem Te Conto', 'Emily Henry', 'Record', 'Romance', 59.90, 5, 'https://imgs.search.brave.com/iEsbhlnrzm7VpPfwruflFaP3yMN5O_3ZZqHuQ8yQP2w/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NDFvWkVPc0FqVEwu/anBn', 3100),
-('Binding 13', 'Chloe Walsh', 'Bloom Brasil', 'Romance', 69.90, 5, 'https://imgs.search.brave.com/EYFO9bdte0fS09UyULu3nS25Q5-SN6t1l6fJv0lKMSs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9odHRw/Mi5tbHN0YXRpYy5j/b20vRF9OUV9OUF85/MDc3ODMtTUxBODIx/NzM2MTg5NjJfMDIy/MDI1LU8ud2WebA', 4100),
-('Apostando no Amor', 'Lynn Painter', 'Intrínseca', 'Romance', 49.90, 5, 'https://imgs.search.brave.com/aCnB8e1DIMI7usc4bm--iZbOP84euPTyh1xJMrF3Kro/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NDFndHNiTWx1Y0wu/anBn', 2750);
-
--- Inserindo algumas resenhas em vídeo (resenhas.php)
-INSERT INTO resenhas_videos (titulo_livro, url_video, resumo) VALUES
-('Dom Casmurro', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Análise completa dos mistérios e ambiguidades da obra-prima de Machado de Assis e o debate sobre Capitu.'),
-('O Hobbit', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Uma jornada fantástica pela Terra Média. Veja os pontos fortes e o desenvolvimento de Bilbo Bolseiro.'),
-('It: A Coisa', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Entenda como Stephen King constrói o terror psicológico e a união do Clube dos Perdedores.');

@@ -36,6 +36,7 @@ iniciar_sessao();
                     
                     <!-- Opções exibidas apenas para leitores autenticados -->
                     <?php if (isset($_SESSION['usuario_id'])): ?>
+                        <td><a href="estante.php"> Minha Estante</a></td>
                         <td><a href="interagir.php"> Interaja / Opinião</a></td>
                         <td><a href="atualizar_status.php"> Atualizar Status</a></td>
                         <td><a href="deletar_usuario.php"> Deletar Conta</a></td>

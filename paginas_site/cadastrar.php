@@ -5,27 +5,28 @@ $mensagem = '';
 // PROCESSAMENTO DO FORMULÁRIO DE CADASTRO (CREATE)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validação rápida dos campos
-    $nome = trim($_POST['nome']);
-    $email = trim($_POST['email']);
-    $senha = trim($_POST['senha']);
+    $nome  = trim($_POST['nome'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $senha = trim($_POST['senha'] ?? '');
 
     if (!empty($nome) && !empty($email) && !empty($senha)) {
         // Verifica se o e-mail já existe na tabela de usuários
         $stmt_check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
         $stmt_check->execute([$email]);
     
-        if ($stmt_check->rowCount() > 0) {
+        // No PostgreSQL com PDO, usa-se fetch() para validar se encontrou registros
+        if ($stmt_check->fetch()) {
             $mensagem = "Este e-mail já está cadastrado!";
         } else {
             // Gera um hash seguro da senha antes de gravar no banco de dados
             $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
 
-            //Insere o novo usuário utilizando prepared statement contra SQL Injection
-            $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)");
+            // Insere o novo usuário ajustando o nome da coluna para 'senha'
+            $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
 
             if ($stmt->execute([$nome, $email, $senha_hash])) {
-                // Rediriocina para o login informado que o cadastro foi concluído 
-                header("Location: longin.php?sucesso=cadastrado");
+                // Redireciona para o login informando que o cadastro foi concluído 
+                header("Location: login.php?sucesso=cadastrado");
                 exit;
             } else {
                 $mensagem = "Erro ao fazer cadastro.";
@@ -35,23 +36,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mensagem = "Preencha todos os campos!";
     }
 }
+
 require_once '../includes/header.php';
 ?>
 
 <main>
-    <h2>Cadastra-se e Entre no Mundo da Leitura!</h2>
-    <?php if ($mensagem): ?> <p style="color:orange;"><strong><?=  $mensagem; ?></strong></p><?php endif; ?>
+    <h2>Cadastre-se e Entre no Mundo da Leitura!</h2>
+    
+    <?php if ($mensagem): ?> 
+        <p style="color:orange;"><strong><?= htmlspecialchars($mensagem); ?></strong></p>
+    <?php endif; ?>
 
-        <!-- FORMULÁRIO DE CADASTRO DE USUÁRIO -->
+    <!-- FORMULÁRIO DE CADASTRO DE USUÁRIO -->
     <form action="cadastrar.php" method="POST">
-        <label>Nome do Usuário:</label><br>
-        <input type="text" name="nome" placeholder="Seu nome completo" required><br><br>
+        <label for="nome">Nome do Usuário:</label><br>
+        <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required><br><br>
 
-        <label>E-mail:</label><br>
-        <input type="email" name="email" placeholder="seuemail@dominio.com" required><br><br>
+        <label for="email">E-mail:</label><br>
+        <input type="email" id="email" name="email" placeholder="seuemail@dominio.com" required><br><br>
 
-        <label>Senha:<label><br>
-        <input type="password" name="senha" placeholder="Digite sua senha" required><br><br>
+        <label for="senha">Senha:</label><br>
+        <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required><br><br>
 
         <button type="submit">Cadastrar</button>
         <a href="index.php"><button type="button">Cancelar</button></a>
@@ -59,8 +64,5 @@ require_once '../includes/header.php';
 
     <p>Já possui cadastro? <a href="login.php">Clique aqui para fazer login</a></p>
 </main>
+
 <?php require_once '../includes/footer.php'; ?>
-
-
-
-?>

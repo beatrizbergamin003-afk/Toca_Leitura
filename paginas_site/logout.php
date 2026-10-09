@@ -2,14 +2,13 @@
 require_once '../config/db.php';
 iniciar_sessao();
 
-//Limpa todas as variáveis da sessão 
+// Limpa todas as variáveis da sessão
+$_SESSION = [];
 session_unset();
 
-//Destrói totalmente a sessão ativa do usuário 
+// Destrói totalmente a sessão ativa no servidor
 session_destroy();
 
-//Redireciona o usuário para a página de login 
-header("Location: login.php");
+// Redireciona para a página de login
+header("Location: login.php?sucesso=deslogado");
 exit;
-
-?>
