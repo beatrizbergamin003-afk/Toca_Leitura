@@ -2,9 +2,9 @@
 require_once '../config/db.php';
 iniciar_sessao();
 
-$mensagem = '';
+$mensagem   = '';
 $usuario_id = $_SESSION['usuario_id'] ?? null;
-$busca = trim($_GET['busca'] ?? '');
+$busca      = trim($_GET['busca'] ?? '');
 
 // ============================================================
 // 1. PROCESSAMENTO DE NOVA RESENHA DO USUÁRIO (TEXTO)
@@ -34,11 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ============================================================
-// 2. CONSULTA DAS RESENHAS EM VÍDEO (Com correção do %$busca%)
+// 2. CONSULTA DAS RESENHAS EM VÍDEO (Com filtro por título)
 // ============================================================
 if (!empty($busca)) {
     $stmt_videos = $pdo->prepare("SELECT * FROM resenhas_videos WHERE titulo_livro ILIKE ? ORDER BY id DESC");
-    $stmt_videos->execute(["%$busca%"]); // FIX: Usando a variável $busca
+    $stmt_videos->execute(["%$busca%"]);
 } else {
     $stmt_videos = $pdo->query("SELECT * FROM resenhas_videos ORDER BY id DESC");
 }
@@ -119,30 +119,36 @@ require_once '../includes/header.php';
     <?php endif; ?>
 
     <!-- SEÇÃO 1: RESENHAS EM VÍDEO -->
-    <h3>🎥 Análises e Resenhas em Vídeo</h3>
+    <h3>🎥 Análises e Resenhas em Vídeo (<?= count($resenhas_videos); ?>)</h3>
 
     <?php if (count($resenhas_videos) > 0): ?>
         <?php foreach ($resenhas_videos as $resenha): ?>
-            <div class="post-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px;">
+            <div class="post-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #fff;">
                 <h3>Análise do Livro: <?= htmlspecialchars($resenha['titulo_livro']); ?></h3>
                 
                 <?php 
-                    // Se for link do Youtube, gera player embutido
+                    // Extração flexível do ID do vídeo no YouTube (suporta watch?v= e youtu.be/)
                     $url = $resenha['url_video'];
-                    if (str_contains($url, 'youtube.com/watch?v=')) {
-                        $code = explode('v=', $url)[1];
-                        $code = explode('&', $code)[0];
-                        $embed_url = "https://www.youtube.com/embed/" . $code;
-                        echo '<iframe width="100%" height="315" src="'.htmlspecialchars($embed_url).'" frameborder="0" allowfullscreen style="max-width:560px; display:block; margin-bottom:10px;"></iframe>';
-                    }
-                ?>
+                    $video_id = '';
 
-                <p>🎥 <strong>Link do Vídeo:</strong> <a href="<?= htmlspecialchars($resenha['url_video']); ?>" target="_blank"><?= htmlspecialchars($resenha['url_video']); ?></a></p>
+                    if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $url, $matches)) {
+                        $video_id = $matches[1];
+                    }
+
+                    if (!empty($video_id)):
+                        $embed_url = "https://www.youtube.com/embed/" . $video_id;
+                ?>
+                        <iframe width="100%" height="315" src="<?= htmlspecialchars($embed_url); ?>" 
+                                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen style="max-width:560px; display:block; margin-bottom:10px; border-radius: 4px;"></iframe>
+                <?php endif; ?>
+
+                <p>🎥 <strong>Link Direto:</strong> <a href="<?= htmlspecialchars($resenha['url_video']); ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($resenha['url_video']); ?></a></p>
                 <p><strong>Resumo explicativo:</strong> <?= htmlspecialchars($resenha['resumo']); ?></p>
             </div>
         <?php endforeach; ?>
     <?php else: ?>
-        <p>Nenhuma resenha em vídeo encontrada.</p>
+        <p>Nenhuma resenha em vídeo encontrada com os termos buscados.</p>
     <?php endif; ?>
 
     <hr>
