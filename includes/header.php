@@ -2,6 +2,12 @@
 // Inclui as configurações de banco e sessão global a partir do diretório raiz
 require_once __DIR__ . '/../config/db.php';
 iniciar_sessao();
+
+// Calcula a quantidade total de itens no carrinho para exibir no ícone
+$total_itens_carrinho = 0;
+if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
+    $total_itens_carrinho = array_sum($_SESSION['carrinho']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -34,11 +40,24 @@ iniciar_sessao();
                     <td><a href="resenhas.php"> Resenhas</a></td>
                     <td><a href="contato.php"> Contate-nos</a></td>
                     
+                    <!-- Link do Carrinho disponível para todos -->
+                    <td>
+                        <a href="carrinho.php" style="font-weight: bold;">
+                            🛒 Carrinho (<?= $total_itens_carrinho; ?>)
+                        </a>
+                    </td>
+
                     <!-- Opções exibidas apenas para leitores autenticados -->
                     <?php if (isset($_SESSION['usuario_id'])): ?>
                         <td><a href="estante.php"> Minha Estante</a></td>
                         <td><a href="interagir.php"> Interaja / Opinião</a></td>
                         <td><a href="atualizar_status.php"> Atualizar Status</a></td>
+                        
+                        <!-- Link exclusivo para administradores -->
+                        <?php if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true): ?>
+                            <td><a href="admin.php" style="color: gold; font-weight: bold;">🛡️ Painel Admin</a></td>
+                        <?php endif; ?>
+
                         <td><a href="deletar_usuario.php"> Deletar Conta</a></td>
                         <td><a href="logout.php"> Sair</a></td>
                     <?php else: ?>

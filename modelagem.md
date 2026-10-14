@@ -1,5 +1,4 @@
 ```mermaid
-
 erDiagram
     USUARIOS {
         int id PK "NOT NULL"
@@ -53,14 +52,38 @@ erDiagram
 
     MENSAGENS_CONTATO {
         int id PK "NOT NULL"
+        int usuario_id FK "NULL"
         string nome "NOT NULL"
         string email "NOT NULL"
+        string assunto "NULL"
         string mensagem "NOT NULL"
+        string resposta_admin "NULL"
+        timestamp data_resposta "NULL"
+        string status "DEFAULT Pendente"
         timestamp criado_em "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    PEDIDOS {
+        int id PK "NOT NULL"
+        int usuario_id FK "NOT NULL"
+        decimal total "NOT NULL"
+        timestamp data_pedido "DEFAULT CURRENT_TIMESTAMP"
+        string status "DEFAULT Concluido"
+    }
+
+    ITENS_PEDIDO {
+        int id PK "NOT NULL"
+        int pedido_id FK "NOT NULL"
+        int livro_id FK "NULL"
+        int quantidade "NOT NULL"
+        decimal preco_unitario "NOT NULL"
     }
 
     USUARIOS ||--o{ HISTORICO_LEITURA : regista
     USUARIOS ||--o{ POSTAGENS_FEED : publica
+    USUARIOS ||--o{ PEDIDOS : realiza
+    USUARIOS ||--o| MENSAGENS_CONTATO : envia
     LIVROS ||--o{ HISTORICO_LEITURA : contem
     LIVROS ||--o{ POSTAGENS_FEED : referencia
-    LIVROS ||--o{ RESENHAS_VIDEOS : possui
+    LIVROS ||--o{ ITENS_PEDIDO : pertence_a
+    PEDIDOS ||--|{ ITENS_PEDIDO : contem

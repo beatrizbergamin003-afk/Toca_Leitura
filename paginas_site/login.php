@@ -1,81 +1,84 @@
 <?php
-require_once '../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 iniciar_sessao();
 
-// Se o usuário já estiver logado, redireciona direto para a página inicial
-if (isset($_SESSION['usuario_id'])) {
-    header("Location: index.php");
-    exit;
-}
+$erro = '';
 
-$mensagem = '';
-
-// PROCESSAMENTO DA AUTENTICAÇÃO DE LOGIN
+// Processamento do Formulário de Login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
 
-    if (!empty($email) && !empty($senha)) {
-        // Busca a conta associada ao e-mail informado
-        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ?");
+    if (empty($email) || empty($senha)) {
+        $erro = "Por favor, preencha todos os campos.";
+    } else {
+        // Busca o usuário no banco incluindo a coluna is_admin
+        $stmt = $pdo->prepare("SELECT id, nome, email, senha, is_admin FROM usuarios WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch();
 
-        // Valida a senha comparando com o Hash salvo na coluna 'senha'
+        // Verificação de senha
         if ($usuario && password_verify($senha, $usuario['senha'])) {
-            // Armazena as credenciais essenciais na sessão PHP
             $_SESSION['usuario_id']   = $usuario['id'];
             $_SESSION['usuario_nome'] = $usuario['nome'];
-            
-            // Redireciona para a página inicial com a sessão ativa
-            header("Location: index.php");
+            $_SESSION['is_admin']     = (bool)$usuario['is_admin'];
+
+            // Tenta registrar nos logs
+            try {
+                $stmt_log = $pdo->prepare("INSERT INTO logs_acesso (usuario_id, email_tentativa, ip_origem, sucesso) VALUES (?, ?, ?, TRUE)");
+                $stmt_log->execute([$usuario['id'], $email, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
+            } catch (PDOException $e) {
+                // Silencia se a tabela logs_acesso não existir
+            }
+
+            header('Location: index.php');
             exit;
         } else {
-            $mensagem = "E-mail ou senha incorretos!";
+            $erro = "E-mail ou senha incorretos.";
+
+            try {
+                $stmt_log = $pdo->prepare("INSERT INTO logs_acesso (usuario_id, email_tentativa, ip_origem, sucesso) VALUES (NULL, ?, ?, FALSE)");
+                $stmt_log->execute([$email, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
+            } catch (PDOException $e) {
+                // Silencia se a tabela logs_acesso não existir
+            }
         }
-    } else {
-        $mensagem = "Preencha e-mail e senha!";
     }
 }
 
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<main>
-    <h2>Entrar na Plataforma</h2>
-    
-    <!-- Mensagens informativas recebidas via parâmetro GET -->
-    <?php if (isset($_GET['sucesso'])): ?>
-        <?php if ($_GET['sucesso'] === 'cadastrado'): ?>
-            <p style="color:green;">Cadastro realizado com sucesso! Faça seu login abaixo.</p>
-        <?php elseif ($_GET['sucesso'] === 'deslogado'): ?>
-            <p style="color:green;">Você saiu da sua conta com sucesso!</p>
-        <?php else: ?>
-            <p style="color:green;">Operação realizada com sucesso!</p>
-        <?php endif; ?>
+<main style="max-width: 450px; margin: 40px auto; padding: 25px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff;">
+    <h2 style="margin-top: 0;">🔑 Entrar na Toca de Leitura</h2>
+
+    <?php if (!empty($erro)): ?>
+        <p style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px;">
+            <strong><?= htmlspecialchars($erro); ?></strong>
+        </p>
     <?php endif; ?>
 
-    <?php if (isset($_GET['erro']) && $_GET['erro'] === 'restrito'): ?>
-        <p style="color:red;">Você precisa estar logado para acessar esta página!</p>
-    <?php endif; ?>
-
-    <?php if ($mensagem): ?>
-        <p style="color:red;"><strong><?= htmlspecialchars($mensagem); ?></strong></p>
-    <?php endif; ?>
-
-    <!-- FORMULÁRIO DE AUTENTICAÇÃO -->
     <form action="login.php" method="POST">
-        <label for="email">E-mail:</label><br>
-        <input type="email" id="email" name="email" required><br><br>
+        <div style="margin-bottom: 15px;">
+            <label for="email" style="display: block; margin-bottom: 5px; font-weight: bold;">E-mail:</label>
+            <input type="email" id="email" name="email" required style="width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
 
-        <label for="senha">Senha:</label><br>
-        <input type="password" id="senha" name="senha" required><br><br>
+        <div style="margin-bottom: 20px;">
+            <label for="senha" style="display: block; margin-bottom: 5px; font-weight: bold;">Senha:</label>
+            <input type="password" id="senha" name="senha" required style="width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
 
-        <button type="submit">Entrar</button>
-        <button type="button" onclick="alert('Redirecionando para login com Google...')">Entrar com Google</button>
+        <button type="submit" style="width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;">
+            Acessar Conta
+        </button>
     </form>
 
-    <p>Ainda não tem conta? <a href="cadastrar.php">Cadastre-se aqui</a>.</p>
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+    <p style="text-align: center; margin-bottom: 0;">
+        Ainda não tem conta? <a href="cadastrar.php">Cadastre-se aqui</a>.
+    </p>
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

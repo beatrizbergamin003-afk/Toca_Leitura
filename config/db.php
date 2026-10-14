@@ -47,9 +47,9 @@ function verificar_autenticacao() {
 function verificar_admin() {
     iniciar_sessao();
     
-    // Se não estiver logado ou se não for administrador, redireciona para o início
+    // Se não estiver logado OU não for admin, redireciona
     if (!isset($_SESSION['usuario_id']) || empty($_SESSION['is_admin'])) {
-        header("Location: index.php?erro=sem_permissao");
+        header("Location: index.php?erro=acesso_negado");
         exit;
     }
 }

@@ -3,19 +3,19 @@ require_once '../config/db.php';
 
 // Captura filtros informados via Query String (GET)
 $genero = $_GET['genero'] ?? '';
-$busca = $_GET['busca'] ?? '';
+$busca  = $_GET['busca']  ?? '';
 
 // Montagem dinâmica da consulta com cláusula defensiva WHERE 1=1
 $sql = "SELECT * FROM livros WHERE 1=1";
 $params = [];
 
-// Aplica filtro por gênero caso tenha sido informado (espaço adicionado antes do AND)
+// Aplica filtro por gênero caso tenha sido informado
 if (!empty($genero)) {
     $sql .= " AND genero = ?";
     $params[] = $genero;
 }
 
-// Aplica filtro de busca por título (LIKE para compatibilidade MySQL)
+// Aplica filtro de busca por título (ILIKE para busca insensível no PostgreSQL)
 if (!empty($busca)) {
     $sql .= " AND titulo ILIKE ?";
     $params[] = "%$busca%";
@@ -31,6 +31,14 @@ require_once '../includes/header.php';
 
 <main>
     <h2>Catálogo e Loja de Livros</h2>
+
+    <!-- Exibe a mensagem de aviso quando um item for adicionado ao carrinho -->
+    <?php if (isset($_SESSION['carrinho_msg'])): ?>
+        <div style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
+            📌 <?= $_SESSION['carrinho_msg']; ?>
+        </div>
+        <?php unset($_SESSION['carrinho_msg']); // Limpa a mensagem para não repetir no reload ?>
+    <?php endif; ?>
 
     <!-- Campo de pesquisa por título -->
     <form action="compras.php" method="GET">
@@ -55,7 +63,7 @@ require_once '../includes/header.php';
 
     <h3>Livros Disponíveis (<?= count($livros); ?>)</h3>
 
-    <!-- Listagem de produtos que tem no site -->
+    <!-- Listagem de produtos disponíveis no site -->
     <?php if (count($livros) > 0): ?>
         <table border="1" cellpadding="10" cellspacing="0">
             <tr>
@@ -86,7 +94,13 @@ require_once '../includes/header.php';
                     <td><?= htmlspecialchars($livro['genero'] ?? 'Não informado'); ?></td>
                     <td><?= htmlspecialchars($livro['estrelas'] ?? 'N/A'); ?> ⭐</td>
                     <td>R$ <?= number_format($livro['preco'] ?? 0, 2, ',', '.'); ?></td>
-                    <td><button onclick="alert('Item adicionado ao carrinho!')">Comprar</button></td>
+                    <td>
+                        <!-- Formulário para adicionar o item ao carrinho -->
+                        <form action="adicionar_carrinho.php" method="POST" style="display: inline;">
+                            <input type="hidden" name="livro_id" value="<?= $livro['id']; ?>">
+                            <button type="submit" style="cursor: pointer; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 4px;">Comprar</button>
+                        </form>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         </table>
