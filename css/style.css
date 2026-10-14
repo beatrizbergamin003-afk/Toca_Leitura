@@ -1,0 +1,681 @@
+/* ==========================================================================
+   A TOCA DE LEITURA / A TOCA LITERÁRIA - ESTILO COMPLETO E UNIFICADO
+   Cores: Creme Aconchegante, Laranja Terracota, Amarelo & Vermelho Maçã 🍎
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap');
+
+:root {
+    /* Paleta Principal Aconchegante */
+    --bg-body: #F8F0E5;           /* Fundo creme do site */
+    --bg-card: #FFFFFF;           /* Cards e Hero brancos */
+    --bg-header: #E28043;         /* Laranja terracota da navegação */
+    --bg-header-dark: #E65100;    /* Laranja raposa escuro */
+    --bg-banner: #EACBB3;         /* Fundo do banner de boas-vindas */
+    
+    /* Textos */
+    --text-dark: #3D2314;         /* Castanho para títulos e corpo */
+    --text-muted: #7E6152;        /* Texto secundário */
+    --text-light: #FFFFFF;        /* Texto claro para cabeçalho */
+    
+    /* Destaques e Botões Laranja */
+    --fox-orange: #E65100;        /* Laranja vibrante principal */
+    --fox-orange-hover: #D84315;  /* Laranja escuro */
+    --warm-yellow: #FFC107;
+    --apple-red: #C62828;         /* Vermelho Maçã 🍎 */
+    --apple-red-hover: #B71C1C;
+    --green-badge: #388E3C;
+    
+    /* Estrutura */
+    --border-soft: #EADCD0;
+    --radius-card: 16px;          /* Arredondamento dos cards e tabelas */
+    --radius-btn: 25px;           /* Bordas bem arredondadas para botões */
+    --shadow-card: 0 4px 15px rgba(61, 35, 20, 0.08);
+}
+
+/* Base Reset & Tipografia */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Nunito', 'Quicksand', system-ui, sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-dark);
+    line-height: 1.6;
+    padding-bottom: 40px;
+}
+
+a {
+    color: var(--fox-orange);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+a:hover {
+    color: var(--apple-red);
+}
+
+/* Container Principal */
+.main-container, .container {
+    max-width: 1200px;
+    margin: 25px auto;
+    padding: 0 20px;
+}
+
+/* ==========================================================================
+   ESTILO PADRÃO DOS BOTÕES (LARANJA + BORDAS ARREDONDADAS)
+   ========================================================================== */
+
+.btn-foxy, 
+.btn-primary, 
+.btn-carrinho, 
+.guia-link,
+button, 
+input[type="submit"] {
+    background-color: var(--fox-orange) !important;
+    color: #FFFFFF !important;
+    border: none;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: 800;
+    border-radius: var(--radius-btn) !important; /* Bordas arredondadas (25px) */
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none !important;
+    box-shadow: 0 3px 8px rgba(230, 81, 0, 0.25);
+    white-space: nowrap;
+}
+
+.btn-foxy:hover, 
+.btn-primary:hover, 
+.btn-carrinho:hover, 
+.guia-link:hover,
+button:hover, 
+input[type="submit"]:hover {
+    background-color: var(--apple-red) !important;
+    color: #FFFFFF !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(198, 40, 40, 0.35);
+}
+
+.btn-secondary {
+    background-color: var(--warm-yellow) !important;
+    color: var(--text-dark) !important;
+    border: none;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: 800;
+    border-radius: var(--radius-btn) !important;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-secondary:hover {
+    background-color: #FFB300 !important;
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   CABEÇALHO COMPACTO E NAVEGAÇÃO
+   ========================================================================== */
+
+header, .site-header {
+    background: linear-gradient(135deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+    color: var(--text-light);
+    padding: 6px 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+}
+
+.header-container {
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-area a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.logo-area h1 {
+    font-size: 16px;
+    margin: 0;
+    color: var(--text-light);
+    font-family: 'Georgia', serif;
+    white-space: nowrap;
+}
+
+.logo-area p {
+    margin: 0;
+    font-size: 10px;
+    color: #FFFDE7;
+    white-space: nowrap;
+}
+
+nav {
+    flex: 1;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 4px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+nav li {
+    white-space: nowrap;
+}
+
+nav a {
+    color: var(--text-light);
+    font-weight: 700;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 16px;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    display: inline-block;
+}
+
+nav a:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #FFFDE7;
+}
+
+/* ==========================================================================
+   HERO / BANNER DA PÁGINA INICIAL (IMAGEM E DESCRIÇÃO LADO A LADO)
+   ========================================================================== */
+
+.hero-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 35px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px 40px;
+    margin-bottom: 25px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header) 0%, var(--apple-red) 100%);
+}
+
+.hero-img {
+    width: 280px;
+    max-width: 100%;
+    max-height: 360px;
+    height: auto;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 3px solid #FFF8F0;
+    box-shadow: 0 8px 20px rgba(61, 35, 20, 0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hero-img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 25px rgba(226, 128, 67, 0.22);
+}
+
+.hero-content {
+    flex: 1;
+}
+
+.hero-content h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 12px;
+    line-height: 1.25;
+}
+
+.hero-content p {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin-bottom: 14px;
+}
+
+/* LISTA DO GUIA RÁPIDO DO SITE */
+.guia-lista {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guia-item {
+    background: #FFFDF9;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    transition: all 0.25s ease;
+}
+
+.guia-item:hover {
+    background-color: #FFFFFF;
+    border-color: var(--bg-header);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(61, 35, 20, 0.08);
+}
+
+/* ==========================================================================
+   PÁGINA DE COMPRAS (CATÁLOGO & VITRINE DE LIVROS)
+   ========================================================================== */
+
+.filtro-container {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 20px 25px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-card);
+}
+
+.filtro-form {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filtro-form select, 
+.filtro-form input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 16px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border-soft);
+    background-color: #FFFDFB;
+}
+
+.livros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 25px;
+}
+
+.livro-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.livro-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(226, 128, 67, 0.18);
+    border-color: var(--bg-header);
+}
+
+.livro-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header) 0%, var(--apple-red) 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.livro-card:hover::before {
+    opacity: 1;
+}
+
+.livro-capa-wrap {
+    width: 100%;
+    height: 260px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background-color: #F8F0E5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(61, 35, 20, 0.1);
+}
+
+.livro-capa-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.livro-card:hover .livro-capa-wrap img {
+    transform: scale(1.04);
+}
+
+.livro-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 15px;
+}
+
+.livro-genero-badge {
+    align-self: flex-start;
+    background-color: #F8E5D6;
+    color: var(--text-dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.livro-titulo {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-dark);
+    line-height: 1.3;
+    margin-top: 2px;
+}
+
+.livro-autor {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.livro-estrelas {
+    color: #FFC107;
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+.livro-rodape {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-soft);
+}
+
+.livro-preco {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--apple-red);
+}
+
+/* ==========================================================================
+   TABELA DE COMPRAS COM BORDAS ARREDONDADAS E QUADRICULADA (ESTILO DESENHO)
+   ========================================================================== */
+
+/* Cartão externo que dá o espaço de respiro (sem ficar grudado) */
+.tabela-container-compras {
+    background-color: var(--bg-card);
+    border: 2px solid var(--border-soft);
+    border-radius: 20px; /* Bordas externas arredondadas */
+    padding: 12px; /* Espaço entre a tabela e a borda externa */
+    margin: 30px 0; /* Desgruda do filtro e do rodapé */
+    box-shadow: var(--shadow-card);
+    overflow-x: auto; /* Permite rolar suavemente em telas menores */
+}
+
+/* Tabela estilizada */
+.tabela-compras {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 14px; /* Acompanha o arredondamento */
+    overflow: hidden;
+    border: 1.5px solid var(--border-soft);
+    background-color: #FFFFFF;
+}
+
+/* Cabeçalho das colunas (Capa, Título, Gênero, Avaliações, Preço, Ação) */
+.tabela-compras th {
+    background-color: #F8E5D6;
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 800;
+    padding: 14px;
+    text-align: center;
+    border-bottom: 2px solid var(--border-soft);
+    border-right: 1.5px solid var(--border-soft); /* Linhas verticais do desenho */
+}
+
+.tabela-compras th:last-child {
+    border-right: none; /* Remove a linha vertical da última coluna */
+}
+
+/* Linhas e Células da Tabela */
+.tabela-compras td {
+    padding: 12px 14px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1.5px solid var(--border-soft);
+    border-right: 1.5px solid var(--border-soft); /* Linhas verticais separando as colunas */
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.tabela-compras td:last-child {
+    border-right: none;
+}
+
+.tabela-compras tr:last-child td {
+    border-bottom: none; /* Mantém as bordas inferiores arredondadas */
+}
+
+.tabela-compras tbody tr:hover {
+    background-color: #FFFDF9; /* Destaque suave ao passar o mouse */
+}
+
+/* Ajustes específicos para cada coluna */
+.col-capa img {
+    width: 50px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(61, 35, 20, 0.15);
+}
+
+.col-titulo {
+    font-weight: 800;
+    text-align: left !important;
+}
+
+.col-preco {
+    font-weight: 900;
+    color: var(--apple-red);
+    font-size: 16px;
+}
+
+.col-estrelas {
+    color: #FFC107;
+    font-size: 15px;
+}
+
+/* ==========================================================================
+   TABELAS PADRÃO ACONCHEGANTES E ARREDONDADAS (PEDIDOS / ADMIN)
+   ========================================================================== */
+
+.tabela-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-card);
+    margin-top: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+table, .tabela-livros {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: var(--bg-card);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+}
+
+th {
+    background: linear-gradient(135deg, #F8E5D6 0%, #F5D9C4 100%);
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 800;
+    padding: 14px 18px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 14px 18px;
+    color: var(--text-dark);
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: middle;
+    transition: background-color 0.2s ease;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background-color: #FFF8F0;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #FFFDFB;
+}
+
+table img.capa-mini {
+    width: 42px;
+    height: 58px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(61, 35, 20, 0.12);
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* ==========================================================================
+   CARDS, FORMULÁRIOS E RODAPÉ
+   ========================================================================== */
+
+.card-box, .card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    background-color: #FFFDFB;
+    color: var(--text-dark);
+    transition: border-color 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--fox-orange);
+    box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.15);
+}
+
+footer {
+    text-align: center;
+    padding: 30px 20px 10px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Adaptação Responsiva para Telemóveis */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    nav ul {
+        overflow-x: auto;
+        width: 100%;
+        padding-bottom: 5px;
+    }
+
+    .hero-section {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .hero-img {
+        width: 180px;
+    }
+
+    .filtro-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

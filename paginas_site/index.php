@@ -1,80 +1,173 @@
-<?php 
-// Carrega a conexão com o banco e a estrutura do cabeçalho
-require_once '../config/db.php';
-require_once '../includes/header.php';
+<?php
+require_once __DIR__ . '/../config/db.php';
+iniciar_sessao();
+
+// Processa a adição ao carrinho caso receba via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['livro_id'])) {
+    $livro_id = (int)$_POST['livro_id'];
+    
+    if (!isset($_SESSION['carrinho'])) {
+        $_SESSION['carrinho'] = [];
+    }
+    
+    if (isset($_SESSION['carrinho'][$livro_id])) {
+        $_SESSION['carrinho'][$livro_id]++;
+    } else {
+        $_SESSION['carrinho'][$livro_id] = 1;
+    }
+    
+    $mensagem_sucesso = "Livro adicionado ao carrinho com sucesso! 🛒";
+}
+
+// Filtros de busca
+$genero_selecionado = $_GET['genero'] ?? '';
+$busca_termo        = trim($_GET['busca'] ?? '');
+
+try {
+    $sql = "SELECT * FROM livros WHERE 1=1";
+    $params = [];
+
+    if (!empty($genero_selecionado)) {
+        $sql .= " AND LOWER(genero) = LOWER(?)";
+        $params[] = $genero_selecionado;
+    }
+
+    if (!empty($busca_termo)) {
+        $sql .= " AND (LOWER(titulo) LIKE LOWER(?) OR LOWER(autor) LIKE LOWER(?))";
+        $params[] = "%{$busca_termo}%";
+        $params[] = "%{$busca_termo}%";
+    }
+
+    $sql .= " ORDER BY id DESC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $livros = $stmt->fetchAll();
+
+    // Busca gêneros distintos para o filtro
+    $stmt_generos = $pdo->query("SELECT DISTINCT genero FROM livros ORDER BY genero ASC");
+    $generos_disponiveis = $stmt_generos->fetchAll(PDO::FETCH_COLUMN);
+
+} catch (PDOException $e) {
+    $livros = [];
+    $generos_disponiveis = [];
+    $erro = "Erro ao carregar o catálogo: " . $e->getMessage();
+}
+
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<main>
-    <!--Seção de apresentação do site -->
-   <section>
-    <h2>Seja bem-vindo(a) à Toca de Leitura!</h2>
+<main class="main-container">
 
-    <div class="banner-container">
-        <img src="../img_site/livros_index.webp" alt="Imagem com livros">
+    <!-- CABEÇALHO DA PÁGINA -->
+    <div style="margin-bottom: 20px; text-align: center;">
+        <h2 style="font-size: 26px; font-weight: 800; color: var(--text-dark);">📚 Catálogo de Livros da Toca</h2>
+        <p style="color: var(--text-muted); font-size: 14px;">Confira nossas ofertas e monte a sua estante 🍎</p>
     </div>
 
-    <div>
-        <h3>Sobre a Toca de Leitura</h3>
-        <p>
-            A <strong>Toca de Leitura</strong> nasceu do desejo de reunir, em um único ecossistema, tudo o que o leitor precisa para vivenciar sua paixão pelos livros. Sabemos como é cansativo ter que usar um aplicativo para marcar páginas, um e-commerce para comprar livros, redes sociais genéricas para discutir capítulos e plataformas externas para assistir a resenhas.
-        </p>
+    <!-- MENSAGEM DE SUCESSO -->
+    <?php if (!empty($mensagem_sucesso)): ?>
+        <div style="background-color: #E8F5E9; color: #2E7D32; padding: 12px 20px; border-radius: 20px; margin-bottom: 20px; font-weight: 700; text-align: center;">
+            <?= htmlspecialchars($mensagem_sucesso); ?>
+            <a href="carrinho.php" style="margin-left: 10px; text-decoration: underline; color: #1B5E20;">Ver Carrinho (<?= array_sum($_SESSION['carrinho'] ?? []); ?>)</a>
+        </div>
+    <?php endif; ?>
 
-        <p>
-            A nossa "Toca" foi desenhada para centralizar toda essa experiência! Em nosso espaço, você pode acompanhar seu progresso diário de leitura, compartilhar suas opiniões no feed comunitário, descobrir tendências da literatura e assistir a análises em vídeo de forma simples e intuitiva.
-        </p>
+    <!-- BARRA DE FILTROS E BUSCA -->
+    <section class="filtro-container">
+        <form action="compras.php" method="GET" class="filtro-form">
+            <input type="text" name="busca" placeholder="🔎 Pesquisar por título ou autor..." value="<?= htmlspecialchars($busca_termo); ?>">
 
-    </div>
-   </section>
+            <select name="genero">
+                <option value="">Todos os Gêneros</option>
+                <?php foreach ($generos_disponiveis as $gen): ?>
+                    <option value="<?= htmlspecialchars($gen); ?>" <?= ($genero_selecionado === $gen) ? 'selected' : ''; ?>>
+                        <?= htmlspecialchars($gen); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
 
-   <hr>
+            <button type="submit" class="btn-foxy">Filtrar</button>
 
-   <!-- GUIA RÁPIDO DOS RECURSOS DO SITE -->
-    <section>
-        <h3>Explore todas as seções do nosso site:</h3>
-        <ul>
-            <li>
-                <strong>Compras e Catálogo:</strong> Explore nosso acervo filtrado por gêneros como Romance, Ficção, Suspense, Terror, Mangás/HQs e Literatura Infantil.
-                (<a href="compras.php">Acessar Compras<a>)
-        
-            </li>
-            <li>
-                <strong>Procure e Tendências:</strong> Pesquise por títulos, autores ou editoras e confira o ranking dos livros mais lidos pela comunidade. 
-                (<a href="procurar.php">Procurar Livros</a>)
-            </li>
-            <li>
-                <strong>Central de Resenhas:</strong> Assista a análises detalhadas em vídeo e leia resumos explicativos para escolher seu próximo livro.
-                (<a href="resenhas.php">Ver Resenhas</a>)
-            </li>
-            <li>
-                <strong>Atendimento e Suporte:</strong> Envie suas dúvidas, sugestões ou mensagens diretamente para a equipe da Toca.
-                (<a href="contato.php">Contate-nos</a>)
-            </li>
-
-            <!-- Links dinâmicos baseados no estado da sessão do usuário -->
-
-            <?php if (isset($_SESSION['usuario_id'])): ?>
-                <li>
-                    <strong>Feed Interativo:</strong> Publique suas impressões sobre o livro que está lendo e veja o que seus amigos estão achando. 
-                    (<a href="interagir.php">Ir para o Feed</a>)
-                </li>
-                <li>
-                    <strong>Atualizar Status de Leitura:</strong> Atualize a quantidade de páginas lidas, o tempo gasto e o gênero do seu livro atual. 
-                    (<a href="atualizar_status.php">Atualizar Meu Status</a>)
-
-                </li>
-                <?php else: ?>
-                <li>
-                 <strong>Entre para a Comunidade:</strong> Para publicar no feed e registrar seu progresso de leitura, 
-                    <a href="cadastrar.php">Cadastre-se gratuitamente</a> ou faça seu <a href="login.php">Login</a>.
-                </li>
-                <?php endif; ?>
-        </ul>
+            <?php if (!empty($genero_selecionado) || !empty($busca_termo)): ?>
+                <a href="compras.php" class="btn-foxy" style="background-color: var(--apple-red) !important;">Limpar Filtros</a>
+            <?php endif; ?>
+        </form>
     </section>
+
+    <!-- TABELA ESTILIZADA COM AS 6 COLUNAS DO RASCUNHO -->
+    <?php if (empty($livros)): ?>
+        <div class="card-box" style="text-align: center; padding: 40px; margin-top: 20px;">
+            <p style="font-size: 16px; color: var(--text-muted); margin-bottom: 10px;">🦊 Nenhum livro encontrado.</p>
+            <a href="compras.php" class="btn-foxy">Ver Todos os Livros</a>
+        </div>
+    <?php else: ?>
+        <div class="tabela-container-compras">
+            <table class="tabela-compras">
+                <thead>
+                    <tr>
+                        <th>Capa</th>
+                        <th>Título</th>
+                        <th>Gênero</th>
+                        <th>Avaliações</th>
+                        <th>Preço</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($livros as $livro): ?>
+                        <?php 
+                            $capa = !empty($livro['capa_url']) ? $livro['capa_url'] : '../img_site/capa_padrao.png';
+                            $estrelas_num = (int)($livro['estrelas'] ?? 5);
+                            $estrelas_str = str_repeat('★', $estrelas_num) . str_repeat('☆', 5 - $estrelas_num);
+                        ?>
+                        <tr>
+                            <!-- 1. CAPA -->
+                            <td class="col-capa">
+                                <img src="<?= htmlspecialchars($capa); ?>" alt="Capa" onerror="this.src='../img_site/capa_padrao.png';">
+                            </td>
+
+                            <!-- 2. TÍTULO E AUTOR -->
+                            <td class="col-titulo">
+                                <div><?= htmlspecialchars($livro['titulo']); ?></div>
+                                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+                                    by <?= htmlspecialchars($livro['autor']); ?>
+                                </span>
+                            </td>
+
+                            <!-- 3. GÊNERO -->
+                            <td>
+                                <span class="livro-genero-badge">
+                                    <?= htmlspecialchars($livro['genero'] ?? 'Geral'); ?>
+                                </span>
+                            </td>
+
+                            <!-- 4. AVALIAÇÕES -->
+                            <td class="col-estrelas">
+                                <?= $estrelas_str; ?>
+                            </td>
+
+                            <!-- 5. PREÇO -->
+                            <td class="col-preco">
+                                R$ <?= number_format((float)($livro['preco'] ?? 0), 2, ',', '.'); ?>
+                            </td>
+
+                            <!-- 6. AÇÃO (COMPRAR) -->
+                            <td>
+                                <form action="compras.php" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="livro_id" value="<?= (int)$livro['id']; ?>">
+                                    <button type="submit" class="btn-foxy">
+                                        🛒 Comprar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
 
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
-
-
-
-
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
