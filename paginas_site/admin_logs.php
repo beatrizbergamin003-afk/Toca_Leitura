@@ -22,12 +22,12 @@ require_once '../includes/header.php';
 ?>
 
 <main style="padding: 20px;">
-    <h2>🔐 Histórico de Acessos e Logins</h2>
+    <h2> Histórico de Acessos e Logins</h2>
     <p><a href="admin.php">← Voltar ao Painel Admin</a></p>
 
     <?php if (!$has_logs_table): ?>
         <p style="background: #fff3cd; color: #856404; padding: 12px; border: 1px solid #ffeeba; border-radius: 4px;">
-            💡 <strong>Aviso:</strong> A tabela <code>logs_acesso</code> ainda não foi criada no PostgreSQL. Execute o comando SQL de criação de tabela no pgAdmin para começar a guardar os registos de IP e data.
+             <strong>Aviso:</strong> A tabela <code>logs_acesso</code> ainda não foi criada no PostgreSQL. Execute o comando SQL de criação de tabela no pgAdmin para começar a guardar os registos de IP e data.
         </p>
     <?php elseif (count($logs) === 0): ?>
         <p>Nenhum registo de acesso encontrado no momento.</p>

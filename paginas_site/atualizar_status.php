@@ -1,44 +1,54 @@
 <?php 
 require_once '../config/db.php';
-verificar_autenticacao();
 
-$mensagem = '';
+// Restringe a página apenas para leitores conectados
+if (function_exists('verificar_autenticacao')) {
+    verificar_autenticacao();
+} else {
+    iniciar_sessao();
+    if (empty($_SESSION['usuario_id'])) {
+        header('Location: login.php');
+        exit;
+    }
+}
+
+$usuario_id   = $_SESSION['usuario_id'];
+$usuario_nome = $_SESSION['usuario_nome'] ?? 'Leitor';
+$mensagem     = '';
+$sucesso      = false;
 
 // Processamento do status e cálculo de progresso
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $livro = trim($_POST['livro']);
-    $genero = trim($_POST['genero']);
-    $tempo = trim($_POST['tempo']);
-    $paginas_lidas = (int)$_POST['paginas_lidas'];
-    $total_paginas = (int)$_POST['total_paginas'];
+    $livro         = trim($_POST['livro'] ?? '');
+    $genero        = trim($_POST['genero'] ?? '');
+    $tempo         = trim($_POST['tempo'] ?? '');
+    $paginas_lidas = (int)($_POST['paginas_lidas'] ?? 0);
+    $total_paginas = (int)($_POST['total_paginas'] ?? 0);
     $publicar_feed = isset($_POST['publicar_feed']);
 
     if (!empty($livro) && $total_paginas > 0) {
-        // Cálculo matemático da porcentagem de conclusão 
-        $progresso_pct = (int)round(($paginas_lidas / $total_paginas) * 100);
-        if ($progresso_pct > 100) {
-            $progresso_pct = 100;
-        }
+        // Cálculo matemático da porcentagem de conclusão (entre 0% e 100%)
+        $progresso_pct = min(100, max(0, (int)round(($paginas_lidas / $total_paginas) * 100)));
 
         // Lógica de upsert: Verifica se o leitor já possui um progresso registrado
         $stmt_check = $pdo->prepare("SELECT id FROM historico_leitura WHERE usuario_id = ?");
-        $stmt_check->execute([$_SESSION['usuario_id']]);
+        $stmt_check->execute([$usuario_id]);
 
         if ($stmt_check->rowCount() > 0) {
             // Update: Atualiza os dados de leitura existentes
             $stmt = $pdo->prepare("
                 UPDATE historico_leitura
-                SET livro_nome = ?, genero = ?, tempo_leitura = ?, paginas_lidas = ?, total_paginas = ?, progresso_pct = ?
+                SET livro_nome = ?, genero = ?, tempo_leitura = ?, paginas_lidas = ?, total_paginas = ?, progresso_pct = ?, atualizado_em = CURRENT_TIMESTAMP
                 WHERE usuario_id = ?
             ");
-            $stmt->execute([$livro, $genero, $tempo, $paginas_lidas, $total_paginas, $progresso_pct, $_SESSION['usuario_id']]);
+            $stmt->execute([$livro, $genero, $tempo, $paginas_lidas, $total_paginas, $progresso_pct, $usuario_id]);
         } else {
             // Insert: Cria registro inicial de leitura
             $stmt = $pdo->prepare("
                 INSERT INTO historico_leitura (usuario_id, livro_nome, genero, tempo_leitura, paginas_lidas, total_paginas, progresso_pct)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$_SESSION['usuario_id'], $livro, $genero, $tempo, $paginas_lidas, $total_paginas, $progresso_pct]);
+            $stmt->execute([$usuario_id, $livro, $genero, $tempo, $paginas_lidas, $total_paginas, $progresso_pct]);
         }
 
         // Integração automática: Gera uma postagem no Feed comunitário se selecionado
@@ -48,80 +58,126 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO postagens_feed (usuario_id, livro_nome, comentario, progresso, aba_categoria)
                 VALUES (?, ?, ?, ?, 'Geral')
             ");
-            $stmt_post->execute([$_SESSION['usuario_id'], $livro, $texto_post, $progresso_pct]);
+            $stmt_post->execute([$usuario_id, $livro, $texto_post, $progresso_pct]);
         }
 
         $mensagem = "Status e progresso de leitura atualizados com sucesso!";
+        $sucesso  = true;
     } else {
-        $mensagem = "Por favor, preencha o nome e um total de páginas maior que zero!";
+        $mensagem = "Por favor, preencha o nome do livro e um total de páginas maior que zero!";
+        $sucesso  = false;
     }
 }
 
 // Busca os dados de progresso atuais do leitor 
-$stmt_atual = $pdo->prepare("SELECT * FROM historico_leitura WHERE usuario_id = ?");
-$stmt_atual->execute([$_SESSION['usuario_id']]);
+$stmt_atual = $pdo->prepare("SELECT * FROM historico_leitura WHERE usuario_id = ? ORDER BY atualizado_em DESC LIMIT 1");
+$stmt_atual->execute([$usuario_id]);
 $status = $stmt_atual->fetch();
 
 // Atribui valores do banco ou padrões zerados
-$livro_atual = $status['livro_nome'] ?? '';
-$genero_atual = $status['genero'] ?? '';
-$tempo_atual = $status['tempo_leitura'] ?? '';
-$paginas_lidas_atual = $status['paginas_lidas'] ?? 0;
-$total_paginas_atual = $status['total_paginas'] ?? 0;
-$progresso_pct_atual = $status['progresso_pct'] ?? 0;
+$livro_atual         = $status['livro_nome'] ?? '';
+$genero_atual        = $status['genero'] ?? '';
+$tempo_atual         = $status['tempo_leitura'] ?? '';
+$paginas_lidas_atual = (int)($status['paginas_lidas'] ?? 0);
+$total_paginas_atual = (int)($status['total_paginas'] ?? 0);
+$progresso_pct_atual = (int)($status['progresso_pct'] ?? 0);
 
 require_once '../includes/header.php';
 ?>
 
-<main>
-    <h2>Atualizar Status e Progresso de Leitura</h2>
-    <p><em>Informe quantas páginas você já leu e acompanhe sua barra de progresso!</em></p>
+<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
+<main class="page-status-bg">
 
-    <?php if ($mensagem): ?>
-        <p style="color:lightsalmon;"><strong><?= $mensagem; ?></strong></p>
-    <?php endif; ?>
-
-    <!-- Painel de status com barra de progresso -->
-    <?php if ($total_paginas_atual > 0): ?>     
-        <fieldset>
-            <legend><strong>Seu Progresso Atual:</strong></legend>
-            <p><strong>Livro:</strong> <?= htmlspecialchars($livro_atual); ?></p>
-            <p><strong>Progresso do Leitor:</strong></p>
-
-            <!-- Renderização gráfica da porcentagem -->
-            <progress value="<?= $progresso_pct_atual; ?>" max="100" style="width: 300px; height: 25px;"></progress>
-            <strong> <?= $progresso_pct_atual; ?>%</strong>
-
-            <p><strong>Páginas lidas:</strong> <?= $paginas_lidas_atual; ?> de <?= $total_paginas_atual; ?></p>
-            <p><strong>Tempo de Leitura:</strong> <?= htmlspecialchars($tempo_atual); ?></p>
-        </fieldset>
-        <br>
-    <?php endif; ?>
-
-    <!-- Formulário de entrada de páginas e livro -->
-    <form action="atualizar_status.php" method="POST">
-        <label>Livro que está lendo:</label><br>
-        <input type="text" name="livro" value="<?= htmlspecialchars($livro_atual); ?>" required><br><br>
-
-        <label>Gênero Literário:</label><br>
-        <input type="text" name="genero" value="<?= htmlspecialchars($genero_atual); ?>" required><br><br>
-
-        <label>Tempo dedicado à Leitura:</label><br>
-        <input type="text" name="tempo" placeholder="Ex: 15 dias" value="<?= htmlspecialchars($tempo_atual); ?>"><br><br>
-
-        <label>Total de páginas do Livro:</label><br>
-        <input type="number" name="total_paginas" min="1" value="<?= $total_paginas_atual; ?>" required><br><br>
-
-        <label>Páginas que você já leu:</label><br>
-        <input type="number" name="paginas_lidas" min="0" value="<?= $paginas_lidas_atual; ?>" required><br><br>
-
-        <!-- Checkbox para ativar a publicação automática no feed -->
-        <input type="checkbox" id="publicar_feed" name="publicar_feed" value="1" checked>
-        <label for="publicar_feed">💬 <strong>Publicar essa atualização no Feed de Opiniões para meus amigos verem?</strong></label><br><br>
+    <section class="status-container">
         
-        <button type="submit">Salvar e Calcular Progresso</button>
-        <button type="reset">Limpar</button>
-    </form>
+        <!-- CABEÇALHO -->
+        <div class="status-header">
+            <h2> Atualizar Status e Progresso de Leitura</h2>
+            <p>Informe quantas páginas você já leu e acompanhe a sua evolução literária!</p>
+        </div>
+
+        <!-- MENSAGENS DE FEEDBACK VISUAL -->
+        <?php if (!empty($mensagem)): ?>
+            <div style="background-color: <?= $sucesso ? '#DCFCE7' : '#FEF3C7'; ?>; color: <?= $sucesso ? '#15803D' : '#B45309'; ?>; padding: 12px 18px; border-radius: 12px; border: 1px solid <?= $sucesso ? '#86EFAC' : '#FCD34D'; ?>; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
+                <?= $sucesso ? ' ' : ' '; ?><?= htmlspecialchars($mensagem); ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- PAINEL DE PREVIEW DO STATUS ATUAL -->
+        <?php if ($total_paginas_atual > 0): ?>     
+            <div class="status-progresso-box">
+                <h3 style="font-size: 16px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
+                     <?= htmlspecialchars($livro_atual); ?>
+                </h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+                    Gênero: <strong><?= htmlspecialchars($genero_atual ?: 'Geral'); ?></strong>
+                    <?php if (!empty($tempo_atual)): ?>
+                        | Meta: <strong><?= htmlspecialchars($tempo_atual); ?></strong>
+                    <?php endif; ?>
+                </p>
+                <p style="font-size: 13px; color: var(--text-dark); margin-bottom: 10px;">
+                    Páginas lidas: <strong><?= $paginas_lidas_atual; ?></strong> de <strong><?= $total_paginas_atual; ?></strong>
+                </p>
+
+                <!-- RENDERIZAÇÃO DA BARRA DE PROGRESSO EM ROXO -->
+                <div class="progresso-container" style="margin: 0;">
+                    <div class="progresso-texto">
+                        <span>Progresso do Leitor</span>
+                        <span><strong><?= $progresso_pct_atual; ?>%</strong></span>
+                    </div>
+                    <div class="progresso-bar-bg" style="height: 10px;">
+                        <div class="progresso-bar-fill" style="width: <?= $progresso_pct_atual; ?>%;"></div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- FORMULÁRIO DE ENTRADA DE LEITURA -->
+        <form action="atualizar_status.php" method="POST">
+            <div class="form-group">
+                <label for="livro">Livro que está lendo:</label>
+                <input type="text" id="livro" name="livro" value="<?= htmlspecialchars($livro_atual); ?>" placeholder="Ex: Corte de Espinhos e Rosas" required>
+            </div>
+
+            <div class="form-group">
+                <label for="genero">Gênero Literário:</label>
+                <input type="text" id="genero" name="genero" value="<?= htmlspecialchars($genero_atual); ?>" placeholder="Ex: Fantasia, Romance, Suspense..." required>
+            </div>
+
+            <div class="form-group">
+                <label for="tempo">Tempo dedicado à Leitura (opcional):</label>
+                <input type="text" id="tempo" name="tempo" placeholder="Ex: 15 dias, 10 páginas por dia" value="<?= htmlspecialchars($tempo_atual); ?>">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="total_paginas">Total de Páginas:</label>
+                    <input type="number" id="total_paginas" name="total_paginas" min="1" value="<?= $total_paginas_atual ?: ''; ?>" placeholder="Ex: 400" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="paginas_lidas">Páginas Lidas:</label>
+                    <input type="number" id="paginas_lidas" name="paginas_lidas" min="0" value="<?= $paginas_lidas_atual; ?>" required>
+                </div>
+            </div>
+
+            <!-- CHECKBOX DE PUBLICAÇÃO AUTOMÁTICA NO FEED -->
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; background-color: #FAF5FF; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--border-soft);">
+                <input type="checkbox" id="publicar_feed" name="publicar_feed" value="1" checked style="width: auto; margin-top: 3px; cursor: pointer;">
+                <label for="publicar_feed" style="font-size: 13px; font-weight: 700; color: var(--text-dark); cursor: pointer; line-height: 1.4;">
+                    Publicar essa atualização no Feed de Opiniões para a comunidade ver?
+                </label>
+            </div>
+
+            <button type="submit" class="btn-foxy btn-submit-block">Salvar e Calcular Progresso</button>
+        </form>
+
+        <div class="cadastro-footer">
+            <a href="estante.php">← Voltar para Minha Estante</a>
+        </div>
+
+    </section>
+
 </main>
 
 <?php require_once '../includes/footer.php'; ?>

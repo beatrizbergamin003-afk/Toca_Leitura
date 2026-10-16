@@ -1,3 +1,4 @@
+
 <?php 
 require_once '../config/db.php';
 iniciar_sessao();
@@ -5,6 +6,12 @@ iniciar_sessao();
 $mensagem   = '';
 $usuario_id = $_SESSION['usuario_id'] ?? null;
 $busca      = trim($_GET['busca'] ?? '');
+
+// Função para converter links comuns do YouTube no formato Embed reproduzível
+function converterYoutubeEmbed($url) {
+    preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $url, $match);
+    return isset($match[1]) ? "https://www.youtube.com/embed/" . $match[1] : $url;
+}
 
 // ============================================================
 // 1. PROCESSAMENTO DE NOVA RESENHA DO USUÁRIO (TEXTO)
@@ -34,13 +41,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ============================================================
-// 2. CONSULTA DAS RESENHAS EM VÍDEO (Com filtro por título)
+// 2. CONSULTA DAS RESENHAS EM VÍDEO (7 gêneros diferentes por padrão)
 // ============================================================
 if (!empty($busca)) {
-    $stmt_videos = $pdo->prepare("SELECT * FROM resenhas_videos WHERE titulo_livro ILIKE ? ORDER BY id DESC");
-    $stmt_videos->execute(["%$busca%"]);
+    // Se houver busca, traz todos os vídeos que correspondem ao título do livro ou ao gênero
+    $sql_videos = "SELECT DISTINCT rv.*, l.genero 
+                  FROM resenhas_videos rv 
+                  LEFT JOIN livros l ON LOWER(TRIM(rv.titulo_livro)) = LOWER(TRIM(l.titulo)) 
+                  WHERE rv.titulo_livro ILIKE ? OR l.genero ILIKE ? 
+                  ORDER BY rv.id DESC";
+    $stmt_videos = $pdo->prepare($sql_videos);
+    $stmt_videos->execute(["%$busca%", "%$busca%"]);
 } else {
-    $stmt_videos = $pdo->query("SELECT * FROM resenhas_videos ORDER BY id DESC");
+    // Se NÃO houver busca, seleciona exatamente 1 vídeo de cada gênero (7 gêneros no total)
+    $sql_videos = "SELECT DISTINCT ON (l.genero) rv.*, l.genero 
+                  FROM resenhas_videos rv 
+                  JOIN livros l ON LOWER(TRIM(rv.titulo_livro)) = LOWER(TRIM(l.titulo)) 
+                  ORDER BY l.genero, rv.id DESC 
+                  LIMIT 7";
+    $stmt_videos = $pdo->query($sql_videos);
 }
 $resenhas_videos = $stmt_videos->fetchAll();
 
@@ -65,113 +84,185 @@ $postagens_comunidade = $stmt_feed->fetchAll();
 require_once '../includes/header.php';
 ?>
 
-<main>
-    <h2>Resenhas em Vídeos, Análises e Feed da Comunidade</h2>
+<main class="main-container">
 
-    <!-- Campo de Pesquisa -->
-    <form action="resenhas.php" method="GET">
-        <input type="text" name="busca" placeholder="Pesquisar por livro..." value="<?= htmlspecialchars($busca); ?>">
-        <button type="submit">Pesquisar</button>
-        <?php if (!empty($busca)): ?>
-            <a href="resenhas.php"><button type="button">Limpar Busca</button></a>
-        <?php endif; ?>
-    </form>
+    <!-- CABEÇALHO DA PÁGINA -->
+    <div style="margin-bottom: 25px; text-align: center;">
+        <h2 style="font-size: 26px; font-weight: 800; color: var(--text-dark);">Central de Resenhas da Toca</h2>
+        <p style="color: var(--text-muted); font-size: 14px;">Assista a análises em vídeo, descubra opiniões e compartilhe suas leituras</p>
+    </div>
 
-    <hr>
-
-    <!-- FORMULÁRIO DE PUBLICAÇÃO (Apenas Leitores Autenticados) -->
-    <?php if ($usuario_id): ?>
-        <fieldset style="padding: 15px; margin-bottom: 25px;">
-            <legend><strong>Escrever uma Resenha / Opinião</strong></legend>
-            
-            <?php if ($mensagem): ?>
-                <p style="color: orange;"><strong><?= htmlspecialchars($mensagem); ?></strong></p>
+    <!-- BARRA DE PESQUISA ESTILIZADA -->
+    <section class="filtro-container">
+        <form action="resenhas.php" method="GET" class="filtro-form">
+            <input type="text" name="busca" placeholder="Pesquisar resenha por nome do livro ou gênero..." value="<?= htmlspecialchars($busca); ?>">
+            <button type="submit" class="btn-foxy">Pesquisar</button>
+            <?php if (!empty($busca)): ?>
+                <a href="resenhas.php" class="btn-foxy" style="background-color: var(--apple-red) !important;">Limpar Busca</a>
             <?php endif; ?>
+        </form>
+    </section>
 
-            <form action="resenhas.php" method="POST">
-                <label for="livro_nome">Nome do Livro:</label><br>
-                <input type="text" id="livro_nome" name="livro_nome" placeholder="Ex: O Pequeno Príncipe" required style="width: 300px;"><br><br>
-
-                <label for="progresso">Seu Progresso de Leitura (%):</label><br>
-                <input type="number" id="progresso" name="progresso" min="0" max="100" value="100" style="width: 80px;"> %<br><br>
-
-                <label for="aba_categoria">Tipo de Postagem:</label><br>
-                <select id="aba_categoria" name="aba_categoria">
-                    <option value="Geral">Geral</option>
-                    <option value="Recomendação">Recomendação</option>
-                    <option value="Crítica">Crítica</option>
-                </select><br><br>
-
-                <label for="comentario">Sua Análise / Comentário:</label><br>
-                <textarea id="comentario" name="comentario" rows="3" cols="60" placeholder="Escreva o que achou da obra..." required></textarea><br><br>
-
-                <button type="submit">Publicar Resenha</button>
-            </form>
-        </fieldset>
-    <?php else: ?>
-        <p style="background: #f8f9fa; padding: 10px; border-left: 4px solid #007bff;">
-            💡 Quer compartilhar sua opinião sobre algum livro? <a href="login.php">Faça Login</a> ou <a href="cadastrar.php">Cadastre-se</a>!
-        </p>
+    <!-- ALERTAS DE MENSAGENS -->
+    <?php if (isset($_GET['sucesso'])): ?>
+        <div style="background-color: #E8F5E9; color: #2E7D32; padding: 14px 20px; border-radius: 16px; margin-bottom: 25px; font-weight: 700; text-align: center;">
+            Sua resenha foi publicada com sucesso no feed da comunidade!
+        </div>
     <?php endif; ?>
 
-    <?php if (isset($_GET['sucesso'])): ?>
-        <p style="color: green;"><strong>Sua resenha foi publicada com sucesso no feed!</strong></p>
+    <?php if ($mensagem): ?>
+        <div style="background-color: #FFEBEE; color: #C62828; padding: 14px 20px; border-radius: 16px; margin-bottom: 25px; font-weight: 700; text-align: center;">
+            <?= htmlspecialchars($mensagem); ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- FORMULÁRIO DE PUBLICAÇÃO DO LEITOR (CARD ACONCHEGANTE) -->
+    <?php if ($usuario_id): ?>
+        <section class="card-box" style="margin-bottom: 35px;">
+            <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 15px;">
+                Escrever uma Resenha / Opinião
+            </h3>
+
+            <form action="resenhas.php" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex: 2; min-width: 220px;">
+                        <label for="livro_nome" style="font-weight: 700; font-size: 13px; color: var(--text-dark);">Nome do Livro:</label>
+                        <input type="text" id="livro_nome" name="livro_nome" placeholder="Ex: O Pequeno Príncipe" required style="margin-top: 5px;">
+                    </div>
+
+                    <div style="flex: 1; min-width: 140px;">
+                        <label for="progresso" style="font-weight: 700; font-size: 13px; color: var(--text-dark);">Progresso (%):</label>
+                        <input type="number" id="progresso" name="progresso" min="0" max="100" value="100" style="margin-top: 5px;">
+                    </div>
+
+                    <div style="flex: 1; min-width: 160px;">
+                        <label for="aba_categoria" style="font-weight: 700; font-size: 13px; color: var(--text-dark);">Tipo de Postagem:</label>
+                        <select id="aba_categoria" name="aba_categoria" style="margin-top: 5px;">
+                            <option value="Geral">Geral</option>
+                            <option value="Recomendação">Recomendação</option>
+                            <option value="Crítica">Crítica</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="comentario" style="font-weight: 700; font-size: 13px; color: var(--text-dark);">Sua Análise / Comentário:</label>
+                    <textarea id="comentario" name="comentario" rows="3" placeholder="Escreva o que achou da obra..." required style="margin-top: 5px;"></textarea>
+                </div>
+
+                <div>
+                    <button type="submit" class="btn-foxy">Publicar Resenha</button>
+                </div>
+            </form>
+        </section>
+    <?php else: ?>
+        <div style="background-color: #FAF5FF; border: 1.5px solid var(--border-soft); border-radius: 18px; padding: 16px 20px; text-align: center; color: var(--text-dark); box-shadow: 0 4px 12px rgba(109, 40, 217, 0.08); margin-bottom: 35px;">
+            Quer compartilhar sua opinião sobre algum livro? 
+            <a href="login.php" style="color: var(--fox-purple); font-weight: 800; text-decoration: underline;">Faça Login</a> ou 
+            <a href="cadastrar.php" style="color: var(--fox-purple); font-weight: 800; text-decoration: underline;">Cadastre-se</a>!
+        </div>
     <?php endif; ?>
 
     <!-- SEÇÃO 1: RESENHAS EM VÍDEO -->
-    <h3>🎥 Análises e Resenhas em Vídeo (<?= count($resenhas_videos); ?>)</h3>
+    <div style="margin-bottom: 15px;">
+        <h3 style="font-size: 22px; font-weight: 800; color: var(--text-dark);">
+            Resenhas de Livros em Vídeo <?= empty($busca) ? '(1 de cada gênero)' : '- Resultados para "' . htmlspecialchars($busca) . '" (' . count($resenhas_videos) . ')'; ?>
+        </h3>
+    </div>
 
     <?php if (count($resenhas_videos) > 0): ?>
-        <?php foreach ($resenhas_videos as $resenha): ?>
-            <div class="post-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #fff;">
-                <h3>Análise do Livro: <?= htmlspecialchars($resenha['titulo_livro']); ?></h3>
-                
+        <div class="resenhas-container">
+            <?php foreach ($resenhas_videos as $resenha): ?>
                 <?php 
-                    // Extração flexível do ID do vídeo no YouTube (suporta watch?v= e youtu.be/)
-                    $url = $resenha['url_video'];
-                    $video_id = '';
-
-                    if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $url, $matches)) {
-                        $video_id = $matches[1];
-                    }
-
-                    if (!empty($video_id)):
-                        $embed_url = "https://www.youtube.com/embed/" . $video_id;
+                    $embed_url = converterYoutubeEmbed($resenha['url_video']);
                 ?>
-                        <iframe width="100%" height="315" src="<?= htmlspecialchars($embed_url); ?>" 
-                                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                allowfullscreen style="max-width:560px; display:block; margin-bottom:10px; border-radius: 4px;"></iframe>
-                <?php endif; ?>
+                <!-- CARD INDIVIDUAL COM BORDA REDONDA ROXA -->
+                <article class="card-resenha-video">
+                    
+                    <!-- BADGE DO GÊNERO -->
+                    <?php if (!empty($resenha['genero'])): ?>
+                        <span class="livro-genero-badge" style="margin-bottom: 10px;">
+                            <?= htmlspecialchars($resenha['genero']); ?>
+                        </span>
+                    <?php endif; ?>
 
-                <p>🎥 <strong>Link Direto:</strong> <a href="<?= htmlspecialchars($resenha['url_video']); ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($resenha['url_video']); ?></a></p>
-                <p><strong>Resumo explicativo:</strong> <?= htmlspecialchars($resenha['resumo']); ?></p>
-            </div>
-        <?php endforeach; ?>
+                    <!-- 1. TÍTULO DO LIVRO CENTRALIZADO -->
+                    <h3 class="resenha-titulo">
+                        Análise de <?= htmlspecialchars($resenha['titulo_livro']); ?>
+                    </h3>
+
+                    <!-- 2. VÍDEO NO CENTRO COM BORDAS ARREDONDADAS -->
+                    <div class="video-wrapper">
+                        <iframe 
+                            src="<?= htmlspecialchars($embed_url); ?>" 
+                            title="Resenha em vídeo de <?= htmlspecialchars($resenha['titulo_livro']); ?>" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+
+                    <!-- 3. DESCRIÇÃO/RESUMO QUE ACOMPANHA A LARGURA DO VÍDEO -->
+                    <p class="resenha-descricao">
+                        <?= htmlspecialchars($resenha['resumo'] ?? 'Confira a análise completa em vídeo sobre este livro incrível!'); ?>
+                    </p>
+
+                    <!-- BOTÃO DIRETO PARA BUSCAR O LIVRO -->
+                    <a href="compras.php?busca=<?= urlencode($resenha['titulo_livro']); ?>" class="btn-foxy">
+                        Buscar este Livro na Loja
+                    </a>
+
+                </article>
+            <?php endforeach; ?>
+        </div>
     <?php else: ?>
-        <p>Nenhuma resenha em vídeo encontrada com os termos buscados.</p>
+        <div class="card-box" style="text-align: center; padding: 30px; margin-bottom: 35px;">
+            <p style="color: var(--text-muted);">Nenhuma resenha em vídeo encontrada com os termos buscados.</p>
+        </div>
     <?php endif; ?>
-
-    <hr>
 
     <!-- SEÇÃO 2: FEED DA COMUNIDADE -->
-    <h3>💬 Opiniões e Resenhas dos Leitores</h3>
+    <div style="margin-top: 40px; margin-bottom: 15px;">
+        <h3 style="font-size: 22px; font-weight: 800; color: var(--text-dark);">
+            Opiniões e Resenhas dos Leitores
+        </h3>
+    </div>
 
     <?php if (count($postagens_comunidade) > 0): ?>
-        <?php foreach ($postagens_comunidade as $post): ?>
-            <article style="border: 1px solid #ccc; padding: 12px; margin-bottom: 12px; border-radius: 5px; background-color: #fafafa;">
-                <h4>📖 <?= htmlspecialchars($post['livro_nome']); ?></h4>
-                <p>
-                    <strong>Por:</strong> <?= htmlspecialchars($post['autor_nome']); ?> |
-                    <strong>Lido:</strong> <?= (int)$post['progresso']; ?>% |
-                    <strong>Categoria:</strong> <?= htmlspecialchars($post['aba_categoria']); ?> |
-                    <small><em><?= date('d/m/Y H:i', strtotime($post['criado_em'])); ?></em></small>
-                </p>
-                <p><?= nl2br(htmlspecialchars($post['comentario'])); ?></p>
-            </article>
-        <?php endforeach; ?>
+        <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px;">
+            <?php foreach ($postagens_comunidade as $post): ?>
+                <article class="card-box" style="padding: 18px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                        <h4 style="font-size: 16px; font-weight: 800; color: var(--text-dark); margin: 0;">
+                            <?= htmlspecialchars($post['livro_nome']); ?>
+                        </h4>
+                        
+                        <div style="display: flex; gap: 6px;">
+                            <span class="livro-genero-badge" style="background-color: #E8F5E9; color: #2E7D32;">
+                                <?= (int)$post['progresso']; ?>% lido
+                            </span>
+                            <span class="livro-genero-badge">
+                                <?= htmlspecialchars($post['aba_categoria']); ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600;">
+                        Por: <strong><?= htmlspecialchars($post['autor_nome']); ?></strong> em <?= date('d/m/Y \à\s H:i', strtotime($post['criado_em'])); ?>
+                    </p>
+
+                    <p style="font-size: 14px; color: var(--text-dark); line-height: 1.6; margin: 0;">
+                        <?= nl2br(htmlspecialchars($post['comentario'])); ?>
+                    </p>
+                </article>
+            <?php endforeach; ?>
+        </div>
     <?php else: ?>
-        <p>Nenhuma publicação feita por leitores ainda.</p>
+        <div class="card-box" style="text-align: center; padding: 30px;">
+            <p style="color: var(--text-muted);">Nenhuma publicação feita por leitores ainda.</p>
+        </div>
     <?php endif; ?>
+
 </main>
 
 <?php require_once '../includes/footer.php'; ?>
+

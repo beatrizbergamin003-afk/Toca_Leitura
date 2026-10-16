@@ -4,7 +4,7 @@
 // ============================================================
 
 // Parâmetros de conexão com o banco PostgreSQL
-$host     = "192.168.10.44";
+$host     = "localhost";
 $port     = "5432";
 $dbname   = "toca_leitura";
 $user     = "raposa";

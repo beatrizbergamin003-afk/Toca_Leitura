@@ -1,31 +1,24 @@
 <?php 
 require_once '../config/db.php';
+
 $mensagem = '';
 
-// PROCESSAMENTO DO FORMULÁRIO DE CADASTRO (CREATE)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validação rápida dos campos
     $nome  = trim($_POST['nome'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $senha = trim($_POST['senha'] ?? '');
 
     if (!empty($nome) && !empty($email) && !empty($senha)) {
-        // Verifica se o e-mail já existe na tabela de usuários
         $stmt_check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
         $stmt_check->execute([$email]);
     
-        // No PostgreSQL com PDO, usa-se fetch() para validar se encontrou registros
         if ($stmt_check->fetch()) {
             $mensagem = "Este e-mail já está cadastrado!";
         } else {
-            // Gera um hash seguro da senha antes de gravar no banco de dados
             $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
-
-            // Insere o novo usuário ajustando o nome da coluna para 'senha'
             $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
 
             if ($stmt->execute([$nome, $email, $senha_hash])) {
-                // Redireciona para o login informando que o cadastro foi concluído 
                 header("Location: login.php?sucesso=cadastrado");
                 exit;
             } else {
@@ -40,29 +33,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require_once '../includes/header.php';
 ?>
 
-<main>
-    <h2>Cadastre-se e Entre no Mundo da Leitura!</h2>
-    
-    <?php if ($mensagem): ?> 
-        <p style="color:orange;"><strong><?= htmlspecialchars($mensagem); ?></strong></p>
-    <?php endif; ?>
+<!-- CONTAINER COM A CLASSE DA IMAGEM DE FUNDO -->
+<main class="page-cadastro-bg">
+    <section class="cadastro-container">
+        <div class="cadastro-header">
+            <h2>Criar uma Conta</h2>
+            <p>Junte-se à comunidade da Toca de Leitura</p>
+        </div>
 
-    <!-- FORMULÁRIO DE CADASTRO DE USUÁRIO -->
-    <form action="cadastrar.php" method="POST">
-        <label for="nome">Nome do Usuário:</label><br>
-        <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required><br><br>
+        <?php if (!empty($mensagem)): ?>
+            <div style="background-color: #FFEBEE; color: #C62828; padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 700; text-align: center;">
+                <?= htmlspecialchars($mensagem); ?>
+            </div>
+        <?php endif; ?>
 
-        <label for="email">E-mail:</label><br>
-        <input type="email" id="email" name="email" placeholder="seuemail@dominio.com" required><br><br>
+        <form action="cadastrar.php" method="POST">
+            <div class="form-group">
+                <label for="nome">Nome Completo:</label>
+                <input type="text" id="nome" name="nome" placeholder="Seu nome completo" value="<?= htmlspecialchars($nome ?? ''); ?>" required>
+            </div>
 
-        <label for="senha">Senha:</label><br>
-        <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required><br><br>
+            <div class="form-group">
+                <label for="email">E-mail:</label>
+                <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" value="<?= htmlspecialchars($email ?? ''); ?>" required>
+            </div>
 
-        <button type="submit">Cadastrar</button>
-        <a href="index.php"><button type="button">Cancelar</button></a>
-    </form>
+            <div class="form-group">
+                <label for="senha">Senha:</label>
+                <input type="password" id="senha" name="senha" placeholder="Crie uma senha segura" required>
+            </div>
 
-    <p>Já possui cadastro? <a href="login.php">Clique aqui para fazer login</a></p>
+            <button type="submit" class="btn-foxy btn-submit-block">Cadastrar Conta</button>
+        </form>
+
+        <div class="cadastro-footer">
+            Já possui uma conta? <a href="login.php">Faça login aqui</a>
+        </div>
+    </section>
 </main>
 
 <?php require_once '../includes/footer.php'; ?>

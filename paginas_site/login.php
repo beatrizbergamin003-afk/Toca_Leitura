@@ -49,36 +49,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<main style="max-width: 450px; margin: 40px auto; padding: 25px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff;">
-    <h2 style="margin-top: 0;">🔑 Entrar na Toca de Leitura</h2>
-
-    <?php if (!empty($erro)): ?>
-        <p style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px;">
-            <strong><?= htmlspecialchars($erro); ?></strong>
-        </p>
-    <?php endif; ?>
-
-    <form action="login.php" method="POST">
-        <div style="margin-bottom: 15px;">
-            <label for="email" style="display: block; margin-bottom: 5px; font-weight: bold;">E-mail:</label>
-            <input type="email" id="email" name="email" required style="width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+<!-- CONTAINER COM A CLASSE DA IMAGEM DE FUNDO -->
+<main class="page-login-bg">
+    <section class="login-container">
+        <div class="cadastro-header">
+            <h2>Entrar na Conta</h2>
+            <p>Bem-vindo de volta à Toca de Leitura</p>
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <label for="senha" style="display: block; margin-bottom: 5px; font-weight: bold;">Senha:</label>
-            <input type="password" id="senha" name="senha" required style="width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+        <?php if (!empty($erro)): ?>
+            <div style="background-color: #FFEBEE; color: #C62828; padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 700; text-align: center;">
+                <?= htmlspecialchars($erro); ?>
+            </div>
+        <?php endif; ?>
+
+        <form action="login.php" method="POST">
+            <div class="form-group">
+                <label for="email">E-mail:</label>
+                <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" value="<?= htmlspecialchars($email ?? ''); ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="senha">Senha:</label>
+                <input type="password" id="senha" name="senha" placeholder="Sua senha" required>
+            </div>
+
+            <button type="submit" class="btn-foxy btn-submit-block">Entrar</button>
+        </form>
+
+        <div class="cadastro-footer">
+            Ainda não tem conta? <a href="cadastrar.php">Cadastre-se aqui</a>
         </div>
-
-        <button type="submit" style="width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;">
-            Acessar Conta
-        </button>
-    </form>
-
-    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-
-    <p style="text-align: center; margin-bottom: 0;">
-        Ainda não tem conta? <a href="cadastrar.php">Cadastre-se aqui</a>.
-    </p>
+    </section>
 </main>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

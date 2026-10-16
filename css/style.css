@@ -6,31 +6,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap');
 
 :root {
-    /* Paleta Principal Aconchegante */
-    --bg-body: #F8F0E5;           /* Fundo creme do site */
+    /* Paleta Principal Aconchegante e Mágica (Roxo / Lilás) 🔮 */
+    --bg-body: #F8F0E5;           /* Fundo creme aconchegante */
     --bg-card: #FFFFFF;           /* Cards e Hero brancos */
-    --bg-header: #E28043;         /* Laranja terracota da navegação */
-    --bg-header-dark: #E65100;    /* Laranja raposa escuro */
-    --bg-banner: #EACBB3;         /* Fundo do banner de boas-vindas */
+    --bg-header: #8B5CF6;         /* Roxo médio / lavanda vibrante da navegação */
+    --bg-header-dark: #6D28D9;    /* Roxo escuro para gradientes */
+    --bg-banner: #E9D5FF;         /* Fundo lilás suave */
     
     /* Textos */
-    --text-dark: #3D2314;         /* Castanho para títulos e corpo */
-    --text-muted: #7E6152;        /* Texto secundário */
+    --text-dark: #2E1065;         /* Roxo profundo para títulos e corpo */
+    --text-muted: #6B21A8;        /* Roxo secundário suave */
     --text-light: #FFFFFF;        /* Texto claro para cabeçalho */
     
-    /* Destaques e Botões Laranja */
-    --fox-orange: #E65100;        /* Laranja vibrante principal */
-    --fox-orange-hover: #D84315;  /* Laranja escuro */
-    --warm-yellow: #FFC107;
-    --apple-red: #C62828;         /* Vermelho Maçã 🍎 */
+    /* Destaques e Botões em Roxo */
+    --fox-purple: #7C3AED;        /* Roxo vibrante principal */
+    --fox-purple-hover: #5B21B6;  /* Roxo escuro para hover */
+    --fox-orange: #7C3AED;        /* Mantido para compatibilidade com botões existentes */
+    --fox-orange-hover: #5B21B6;  /* Mantido para compatibilidade */
+    --warm-yellow: #FFC107;       /* Amarelo de destaque */
+    --apple-red: #C62828;         /* Vermelho Maçã 🍎 (alertas / ações destrutivas) */
     --apple-red-hover: #B71C1C;
     --green-badge: #388E3C;
     
     /* Estrutura */
-    --border-soft: #EADCD0;
+    --border-soft: #E9D5FF;       /* Bordas lilás suaves */
     --radius-card: 16px;          /* Arredondamento dos cards e tabelas */
     --radius-btn: 25px;           /* Bordas bem arredondadas para botões */
-    --shadow-card: 0 4px 15px rgba(61, 35, 20, 0.08);
+    --shadow-card: 0 4px 15px rgba(109, 40, 217, 0.1); /* Sombra suave arroxeada */
 }
 
 /* Base Reset & Tipografia */
@@ -49,13 +51,13 @@ body {
 }
 
 a {
-    color: var(--fox-orange);
+    color: var(--fox-purple);
     text-decoration: none;
     transition: all 0.2s ease;
 }
 
 a:hover {
-    color: var(--apple-red);
+    color: var(--fox-purple-hover);
 }
 
 /* Container Principal */
@@ -64,9 +66,8 @@ a:hover {
     margin: 25px auto;
     padding: 0 20px;
 }
-
 /* ==========================================================================
-   ESTILO PADRÃO DOS BOTÕES (LARANJA + BORDAS ARREDONDADAS)
+   ESTILO PADRÃO DOS BOTÕES (ROXO + BORDAS ARREDONDADAS)
    ========================================================================== */
 
 .btn-foxy, 
@@ -75,7 +76,7 @@ a:hover {
 .guia-link,
 button, 
 input[type="submit"] {
-    background-color: var(--fox-orange) !important;
+    background-color: var(--fox-purple) !important;
     color: #FFFFFF !important;
     border: none;
     padding: 9px 20px;
@@ -89,7 +90,7 @@ input[type="submit"] {
     justify-content: center;
     gap: 6px;
     text-decoration: none !important;
-    box-shadow: 0 3px 8px rgba(230, 81, 0, 0.25);
+    box-shadow: 0 3px 8px rgba(124, 58, 237, 0.25); /* Sombra em tom roxo */
     white-space: nowrap;
 }
 
@@ -99,10 +100,10 @@ input[type="submit"] {
 .guia-link:hover,
 button:hover, 
 input[type="submit"]:hover {
-    background-color: var(--apple-red) !important;
+    background-color: var(--fox-purple-hover) !important;
     color: #FFFFFF !important;
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(198, 40, 40, 0.35);
+    box-shadow: 0 6px 14px rgba(91, 33, 182, 0.35); /* Sombra roxo escuro no hover */
 }
 
 .btn-secondary {
@@ -126,14 +127,14 @@ input[type="submit"]:hover {
 }
 
 /* ==========================================================================
-   CABEÇALHO COMPACTO E NAVEGAÇÃO
+   CABEÇALHO COMPACTO E LOGO DA RAPOSINHA 🦊
    ========================================================================== */
 
 header, .site-header {
     background: linear-gradient(135deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
     color: var(--text-light);
     padding: 6px 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    box-shadow: 0 2px 10px rgba(109, 40, 217, 0.2); /* Sombra suave em tom roxo */
     position: sticky;
     top: 0;
     z-index: 100;
@@ -152,9 +153,25 @@ header, .site-header {
 .logo-area a {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     text-decoration: none;
     white-space: nowrap;
+}
+
+/* Estilo para destacar a imagem da logo no menu */
+.logo-site {
+    height: 42px;
+    width: 42px;
+    object-fit: contain;
+    background-color: #FFFFFF;
+    padding: 3px;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    transition: transform 0.2s ease;
+}
+
+.logo-site:hover {
+    transform: scale(1.08);
 }
 
 .logo-area h1 {
@@ -168,7 +185,7 @@ header, .site-header {
 .logo-area p {
     margin: 0;
     font-size: 10px;
-    color: #FFFDE7;
+    color: #F3E8FF; /* Lilás suave para o subtítulo */
     white-space: nowrap;
 }
 
@@ -205,7 +222,7 @@ nav a {
 
 nav a:hover {
     background-color: rgba(255, 255, 255, 0.25);
-    color: #FFFDE7;
+    color: #F3E8FF; /* Lilás claro no hover do menu */
 }
 
 /* ==========================================================================
@@ -234,7 +251,7 @@ nav a:hover {
     left: 0;
     width: 100%;
     height: 4px;
-    background: linear-gradient(90deg, var(--bg-header) 0%, var(--apple-red) 100%);
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
 }
 
 .hero-img {
@@ -245,14 +262,14 @@ nav a:hover {
     flex-shrink: 0;
     object-fit: cover;
     border-radius: 14px;
-    border: 3px solid #FFF8F0;
-    box-shadow: 0 8px 20px rgba(61, 35, 20, 0.15);
+    border: 3px solid #F3E8FF; /* Borda lilás suave */
+    box-shadow: 0 8px 20px rgba(109, 40, 217, 0.15); /* Sombra roxa suave */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .hero-img:hover {
     transform: scale(1.02);
-    box-shadow: 0 12px 25px rgba(226, 128, 67, 0.22);
+    box-shadow: 0 12px 25px rgba(124, 58, 237, 0.22); /* Brilho roxo vibrante no hover */
 }
 
 .hero-content {
@@ -284,7 +301,7 @@ nav a:hover {
 }
 
 .guia-item {
-    background: #FFFDF9;
+    background: #FAF5FF; /* Fundo lilás claro suave */
     padding: 14px 18px;
     border-radius: 12px;
     border: 1px solid var(--border-soft);
@@ -299,7 +316,7 @@ nav a:hover {
     background-color: #FFFFFF;
     border-color: var(--bg-header);
     transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(61, 35, 20, 0.08);
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.1); /* Sombra roxa no hover */
 }
 
 /* ==========================================================================
@@ -329,7 +346,7 @@ nav a:hover {
     padding: 10px 16px;
     border-radius: 20px;
     border: 1.5px solid var(--border-soft);
-    background-color: #FFFDFB;
+    background-color: #FAF5FF; /* Fundo lilás claro suave */
 }
 
 .livros-grid {
@@ -354,7 +371,7 @@ nav a:hover {
 
 .livro-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(226, 128, 67, 0.18);
+    box-shadow: 0 8px 25px rgba(124, 58, 237, 0.18); /* Brilho roxo ao passar o mouse */
     border-color: var(--bg-header);
 }
 
@@ -365,7 +382,7 @@ nav a:hover {
     left: 0;
     width: 100%;
     height: 4px;
-    background: linear-gradient(90deg, var(--bg-header) 0%, var(--apple-red) 100%);
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%); /* Gradiente em tons de roxo */
     opacity: 0;
     transition: opacity 0.25s ease;
 }
@@ -380,11 +397,11 @@ nav a:hover {
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 12px;
-    background-color: #F8F0E5;
+    background-color: #FAF5FF; /* Fundo neutro com toque lilás */
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 10px rgba(61, 35, 20, 0.1);
+    box-shadow: 0 4px 10px rgba(109, 40, 217, 0.1); /* Sombra roxa sutil */
 }
 
 .livro-capa-wrap img {
@@ -407,7 +424,7 @@ nav a:hover {
 
 .livro-genero-badge {
     align-self: flex-start;
-    background-color: #F8E5D6;
+    background-color: #F3E8FF; /* Badge em tom lavanda suave */
     color: var(--text-dark);
     font-size: 11px;
     font-weight: 700;
@@ -449,10 +466,10 @@ nav a:hover {
 .livro-preco {
     font-size: 18px;
     font-weight: 900;
-    color: var(--apple-red);
+    color: var(--fox-purple); /* Preço destacado no roxo principal */
 }
 
-/* ==========================================================================
+//* ==========================================================================
    TABELA DE COMPRAS COM BORDAS ARREDONDADAS E QUADRICULADA (ESTILO DESENHO)
    ========================================================================== */
 
@@ -480,7 +497,7 @@ nav a:hover {
 
 /* Cabeçalho das colunas (Capa, Título, Gênero, Avaliações, Preço, Ação) */
 .tabela-compras th {
-    background-color: #F8E5D6;
+    background-color: #F3E8FF; /* Fundo lilás suave para o cabeçalho */
     color: var(--text-dark);
     font-size: 14px;
     font-weight: 800;
@@ -514,7 +531,7 @@ nav a:hover {
 }
 
 .tabela-compras tbody tr:hover {
-    background-color: #FFFDF9; /* Destaque suave ao passar o mouse */
+    background-color: #FAF5FF; /* Destaque suave em tom de lilás ao passar o mouse */
 }
 
 /* Ajustes específicos para cada coluna */
@@ -523,7 +540,7 @@ nav a:hover {
     height: 70px;
     object-fit: cover;
     border-radius: 8px;
-    box-shadow: 0 3px 8px rgba(61, 35, 20, 0.15);
+    box-shadow: 0 3px 8px rgba(109, 40, 217, 0.15); /* Sombra levemente arroxeada */
 }
 
 .col-titulo {
@@ -533,13 +550,84 @@ nav a:hover {
 
 .col-preco {
     font-weight: 900;
-    color: var(--apple-red);
+    color: var(--fox-purple); /* Preço destacado no roxo principal */
     font-size: 16px;
 }
 
 .col-estrelas {
     color: #FFC107;
     font-size: 15px;
+}
+
+/* ==========================================================================
+   CENTRAL DE RESENHAS EM VÍDEO (VÍDEO E DESCRIÇÃO CENTRALIZADOS COM BORDA ROXA)
+   ========================================================================== */
+
+/* Lista/Grid centralizada na página */
+.resenhas-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    max-width: 850px; /* Largura perfeita para leitura e vídeo */
+    margin: 20px auto;
+}
+
+/* Card individual da resenha com Borda Arredondada Roxa */
+.card-resenha-video {
+    background-color: var(--bg-card);
+    border: 2.5px solid var(--bg-header); /* Borda redonda em tom roxo */
+    border-radius: 22px; /* Cantos arredondados */
+    padding: 28px 20px;
+    box-shadow: var(--shadow-card);
+    text-align: center; /* Centraliza todo o conteúdo interno */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Garante que elementos filhos fiquem centralizados */
+    justify-content: center;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-resenha-video:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 22px rgba(124, 58, 237, 0.22); /* Sombra em tom de roxo vibrante */
+}
+
+/* Título do Livro Resenhado */
+.resenha-titulo {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+/* Container do Vídeo Responsivo no Centro */
+.video-wrapper {
+    width: 100%;
+    max-width: 640px; /* Tamanho ideal para o vídeo ficar bem destacado no meio */
+    aspect-ratio: 16 / 9; /* Proporção padrão do YouTube */
+    margin: 0 auto 18px auto;
+    border-radius: 16px; /* Bordas arredondadas no próprio vídeo */
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(109, 40, 217, 0.18); /* Sombra roxa sutil */
+    border: 2px solid var(--border-soft);
+    background-color: #000000;
+}
+
+.video-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Texto de Descrição Acompanhando a Largura do Vídeo no Meio */
+.resenha-descricao {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    max-width: 640px; /* Fica exatamente da mesma largura do vídeo */
+    margin: 0 auto 15px auto;
+    text-align: center; /* Texto centralizado */
 }
 
 /* ==========================================================================
@@ -565,7 +653,7 @@ table, .tabela-livros {
 }
 
 th {
-    background: linear-gradient(135deg, #F8E5D6 0%, #F5D9C4 100%);
+    background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); /* Gradiente em tom de lilás suave */
     color: var(--text-dark);
     font-size: 13px;
     font-weight: 800;
@@ -590,11 +678,11 @@ tr:last-child td {
 }
 
 tbody tr:hover {
-    background-color: #FFF8F0;
+    background-color: #FAF5FF; /* Destaque suave ao passar o mouse em tom lilás */
 }
 
 tbody tr:nth-child(even) {
-    background-color: #FFFDFB;
+    background-color: #FAF5FF; /* Alternância de linhas suave */
 }
 
 table img.capa-mini {
@@ -602,7 +690,7 @@ table img.capa-mini {
     height: 58px;
     object-fit: cover;
     border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(61, 35, 20, 0.12);
+    box-shadow: 0 2px 6px rgba(109, 40, 217, 0.15); /* Sombra com brilho roxo sutil */
     vertical-align: middle;
     margin-right: 10px;
 }
@@ -632,15 +720,15 @@ textarea {
     border-radius: 12px;
     font-family: inherit;
     font-size: 14px;
-    background-color: #FFFDFB;
+    background-color: #FAF5FF; /* Fundo suave com leve toque lilás */
     color: var(--text-dark);
     transition: border-color 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: var(--fox-orange);
-    box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.15);
+    border-color: var(--fox-purple); /* Borda destacada no roxo principal */
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18); /* Brilho de foco em tom roxo */
 }
 
 footer {
@@ -678,4 +766,704 @@ footer {
         flex-direction: column;
         align-items: stretch;
     }
+}
+
+/* ==========================================================================
+   PÁGINA DE CADASTRO & LOGIN (FORMULÁRIOS CENTRALIZADOS)
+   ========================================================================== */
+
+.cadastro-container,
+.login-container {
+    max-width: 500px;
+    margin: 35px auto;
+    background-color: var(--bg-card);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 35px 30px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe superior em gradiente roxo */
+.cadastro-container::before,
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+.cadastro-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.cadastro-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.cadastro-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 11px 16px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    background-color: #FAF5FF;
+    color: var(--text-dark);
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--fox-purple);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+    background-color: #FFFFFF;
+}
+
+.btn-submit-block {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+}
+
+.cadastro-footer {
+    text-align: center;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--border-soft);
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.cadastro-footer a {
+    color: var(--fox-purple);
+    font-weight: 800;
+    text-decoration: underline;
+}
+
+.cadastro-footer a:hover {
+    color: var(--fox-purple-hover);
+}
+
+/* Fundo com imagem para a página de cadastro */
+.page-cadastro-bg {
+    background: url('../img_site/mundolivro4.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+/* Fundo com imagem para Cadastro e Login */
+.page-cadastro-bg,
+.page-login-bg {
+    background: url('../img_site/mundolivro5.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+
+/* ==========================================================================
+   PÁGINA DE ADMIN COM IMAGEM DE FUNDO (prateleira.jpg)
+   ========================================================================== */
+
+/* Fundo da tela de admin */
+.page-admin-bg {
+    background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Card/Container do Painel Admin para manter a leitura limpa sobre a imagem */
+.admin-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95); /* Fundo branco com leve transparência */
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+/* ==========================================================================
+   PÁGINA MINHA ESTANTE (ESTANTE.PHP)
+   ========================================================================== */
+
+/* Container Principal da Estante */
+.estante-container {
+    background-color: var(--bg-card);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+
+.estante-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+/* Cabeçalho & Resumo da Estante */
+.estante-header {
+    margin-bottom: 25px;
+}
+
+.estante-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.estante-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Métricas / Contadores da Estante */
+.estante-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    margin: 20px 0 25px 0;
+}
+
+.stat-box {
+    background-color: #FAF5FF;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.12);
+}
+
+.stat-box .numero {
+    display: block;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--fox-purple);
+}
+
+.stat-box .rotulo {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+/* Abas de Filtro (Lendo, Lido, Quero Ler, Todos) */
+.estante-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    border-bottom: 1.5px solid var(--border-soft);
+    padding-bottom: 12px;
+}
+
+.tab-btn {
+    background-color: #FAF5FF !important;
+    color: var(--text-dark) !important;
+    border: 1.5px solid var(--border-soft) !important;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 20px !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    box-shadow: none !important;
+}
+
+.tab-btn:hover,
+.tab-btn.active {
+    background-color: var(--fox-purple) !important;
+    color: #FFFFFF !important;
+    border-color: var(--fox-purple) !important;
+}
+
+/* Grid de Livros da Estante */
+.estante-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 25px;
+}
+
+.estante-card {
+    background-color: var(--bg-card);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+}
+
+.estante-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 22px rgba(124, 58, 237, 0.18);
+    border-color: var(--bg-header);
+}
+
+/* Badges de Status de Leitura */
+.status-badge {
+    align-self: flex-start;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.status-lendo {
+    background-color: #E9D5FF;
+    color: #5B21B6;
+}
+
+.status-lido {
+    background-color: #DCFCE7;
+    color: #15803D;
+}
+
+.status-quero {
+    background-color: #FEF3C7;
+    color: #B45309;
+}
+
+/* Barra de Progresso de Leitura */
+.progresso-container {
+    margin: 10px 0;
+}
+
+.progresso-texto {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.progresso-bar-bg {
+    width: 100%;
+    height: 8px;
+    background-color: #FAF5FF;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progresso-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bg-header) 0%, var(--fox-purple) 100%);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+/* Mensagem de Estante Vazia */
+.estante-vazia {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #FAF5FF;
+    border: 1.5px dashed var(--border-soft);
+    border-radius: var(--radius-card);
+    color: var(--text-muted);
+}
+
+.estante-vazia p {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+/* ==========================================================================
+   PÁGINA MINHA ESTANTE COM IMAGEM DE FUNDO
+   ========================================================================== */
+
+/* Fundo da tela de estante */
+.page-estante-bg {
+    /* Altere o nome do arquivo abaixo se quiser usar outra imagem (ex: mundolivro3.jpg) */
+    background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Card/Container da Estante translúcido para garantir legibilidade sobre a imagem */
+.estante-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95); /* Fundo branco levemente translúcido */
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+}
+
+
+/* ==========================================================================
+   PÁGINA DE INTERAÇÃO / FEED DA COMUNIDADE (INTERAJA.PHP)
+   ========================================================================== */
+
+/* Container com a Imagem de Fundo */
+.page-interagir-bg {
+    background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Card Principal Translúcido */
+.interagir-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+}
+
+.interagir-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+/* Cabeçalho da Página */
+.interagir-header {
+    margin-bottom: 25px;
+}
+
+.interagir-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.interagir-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Card de Publicação / Criar Post */
+.criar-post-box {
+    background-color: #FAF5FF;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 22px;
+    margin-bottom: 30px;
+}
+
+.criar-post-box h3 {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 12px;
+}
+
+.criar-post-box textarea {
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    background-color: #FFFFFF;
+    color: var(--text-dark);
+    margin-bottom: 12px;
+}
+
+.criar-post-box textarea:focus {
+    outline: none;
+    border-color: var(--fox-purple);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+
+/* Feed de Publicações / Cards */
+.feed-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.feed-card {
+    background-color: #FFFFFF;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feed-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.15);
+}
+
+/* Usuário & Autor da Postagem */
+.feed-autor {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.avatar-usuario {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: var(--bg-banner);
+    color: var(--fox-purple);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 2px solid var(--border-soft);
+}
+
+.autor-info h4 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.autor-info span {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.feed-conteudo {
+    font-size: 14px;
+    color: var(--text-dark);
+    line-height: 1.6;
+    margin-bottom: 15px;
+    white-space: pre-line;
+}
+
+/* Rodapé / Ações do Card (Curtir, Excluir, etc) */
+.feed-acoes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-soft);
+}
+
+/* ==========================================================================
+   PÁGINA ATUALIZAR STATUS DE LEITURA (ATUALIZAR_STATUS.PHP)
+   ========================================================================== */
+
+/* Fundo da tela de Atualizar Status */
+.page-status-bg {
+    background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 35px 20px;
+}
+
+/* Card/Container centralizado e translúcido */
+.status-container {
+    width: 100%;
+    max-width: 550px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 35px 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+}
+
+/* Detalhe superior com o gradiente roxo característico */
+.status-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+.status-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.status-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.status-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Bloco de Progresso / Barra interativa */
+.status-progresso-box {
+    background-color: #FAF5FF;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+/* ==========================================================================
+   PÁGINA DELETAR USUÁRIO / DELETAR CONTA (DELETAR_USUARIO.PHP)
+   ========================================================================== */
+
+/* Fundo da página com a imagem de fundo da Toca */
+.page-deletar-bg {
+    background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 35px 20px;
+}
+
+/* Container principal translúcido */
+.deletar-container {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.96);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 35px 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+    text-align: center;
+}
+
+/* Detalhe superior com o gradiente Roxo Mágico */
+.deletar-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+.deletar-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.deletar-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Quadro Informativo em Lilás Suave */
+.alerta-perigo-box {
+    background-color: #FAF5FF;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 18px;
+    margin: 20px 0;
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    line-height: 1.6;
+}
+
+.alerta-perigo-box ul {
+    margin-top: 8px;
+    margin-left: 20px;
+    color: var(--text-muted);
 }

@@ -13,7 +13,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <main style="max-width: 1000px; margin: 30px auto; padding: 20px;">
-    <h2>📦 Histórico de Pedidos e Vendas</h2>
+    <h2> Histórico de Pedidos e Vendas</h2>
     <p><a href="admin.php">← Voltar ao Painel Admin</a></p>
 
     <?php if (empty($pedidos)): ?>

@@ -60,7 +60,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <main style="max-width: 1000px; margin: 30px auto; padding: 20px;">
-    <h2>📩 Painel de Atendimento ao Leitor (Mensagens de Suporte)</h2>
+    <h2> Painel de Atendimento ao Leitor (Mensagens de Suporte)</h2>
     <p><a href="admin.php">← Voltar ao Painel Admin</a></p>
 
     <?php if ($mensagem_sucesso): ?>
@@ -96,15 +96,15 @@ require_once __DIR__ . '/../includes/header.php';
                         <strong style="font-size: 16px;"><?= htmlspecialchars($msg['nome']); ?></strong> 
                         (<a href="mailto:<?= htmlspecialchars($msg['email']); ?>"><?= htmlspecialchars($msg['email']); ?></a>)
                         <?php if (!empty($msg['nome_usuario'])): ?>
-                            <span style="font-size: 12px; background: #e7f1ff; color: #004085; padding: 2px 8px; border-radius: 12px; margin-left: 5px;">👤 Usuário Cadastrado</span>
+                            <span style="font-size: 12px; background: #e7f1ff; color: #004085; padding: 2px 8px; border-radius: 12px; margin-left: 5px;"> Usuário Cadastrado</span>
                         <?php endif; ?>
                     </div>
                     <div>
-                        <span style="color: #666; font-size: 14px;">📅 <?= $data_envio; ?></span> | 
+                        <span style="color: #666; font-size: 14px;"> <?= $data_envio; ?></span> | 
                         <?php if ($ja_respondido): ?>
-                            <span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;">✅ Respondida</span>
+                            <span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;">Respondida</span>
                         <?php else: ?>
-                            <span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;">⏳ Pendente</span>
+                            <span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;">Pendente</span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -119,7 +119,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <!-- Exibição da Resposta Anterior (se houver) -->
                 <?php if ($ja_respondido): ?>
                     <div style="background: #e2f0d9; padding: 12px; border-left: 4px solid #28a745; border-radius: 0 4px 4px 0; margin-bottom: 15px;">
-                        <strong style="color: #155724;">💬 Resposta enviada pelo Admin (<?= !empty($msg['data_resposta']) ? date('d/m/Y H:i', strtotime($msg['data_resposta'])) : 'Enviada'; ?>):</strong>
+                        <strong style="color: #155724;"> Resposta enviada pelo Admin (<?= !empty($msg['data_resposta']) ? date('d/m/Y H:i', strtotime($msg['data_resposta'])) : 'Enviada'; ?>):</strong>
                         <p style="margin: 5px 0 0 0; color: #155724; white-space: pre-wrap;"><?= htmlspecialchars($msg['resposta_admin']); ?></p>
                     </div>
                 <?php endif; ?>
@@ -128,7 +128,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px; border-top: 1px dashed #ddd; padding-top: 12px;">
                     <details style="flex: 1;" <?= !$ja_respondido ? 'open' : ''; ?>>
                         <summary style="cursor: pointer; color: #007bff; font-weight: bold;">
-                            <?= $ja_respondido ? '✏️ Editar Resposta Enviada' : '✍️ Escrever Resposta para este leitor' ?>
+                            <?= $ja_respondido ? ' Editar Resposta Enviada' : ' Escrever Resposta para este leitor' ?>
                         </summary>
                         <form action="admin_mensagens.php" method="POST" style="margin-top: 12px;">
                             <input type="hidden" name="acao" value="responder">
@@ -138,7 +138,7 @@ require_once __DIR__ . '/../includes/header.php';
                             
                             <div style="margin-top: 8px;">
                                 <button type="submit" style="background: #28a745; color: white; border: none; padding: 8px 16px; font-weight: bold; border-radius: 4px; cursor: pointer;">
-                                    🚀 <?= $ja_respondido ? 'Atualizar Resposta' : 'Enviar Resposta ao Leitor' ?>
+                                     <?= $ja_respondido ? 'Atualizar Resposta' : 'Enviar Resposta ao Leitor' ?>
                                 </button>
                             </div>
                         </form>
@@ -149,7 +149,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <input type="hidden" name="acao" value="excluir">
                         <input type="hidden" name="mensagem_id" value="<?= $msg['id']; ?>">
                         <button type="submit" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                            🗑️ Excluir
+                             Excluir
                         </button>
                     </form>
                 </div>

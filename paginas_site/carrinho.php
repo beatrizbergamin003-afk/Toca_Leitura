@@ -1,199 +1,241 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
+require_once '../config/db.php';
 iniciar_sessao();
 
-// Inicializa a estrutura do carrinho na sessão se não existir
-if (!isset($_SESSION['carrinho'])) {
+// Inicializa o carrinho se não existir
+if (!isset($_SESSION['carrinho']) || !is_array($_SESSION['carrinho'])) {
     $_SESSION['carrinho'] = [];
 }
 
-$mensagem = '';
-
-// Função para buscar e calcular os itens presentes no carrinho a partir do Banco de Dados
-function carregar_itens_carrinho($pdo) {
-    $itens = [];
-    $total = 0;
-
-    if (!empty($_SESSION['carrinho'])) {
-        $ids = array_keys($_SESSION['carrinho']);
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        
-        $stmt = $pdo->prepare("SELECT id, titulo, genero, preco, capa_url FROM livros WHERE id IN ($placeholders)");
-        $stmt->execute($ids);
-        $livros = $stmt->fetchAll();
-
-        foreach ($livros as $livro) {
-            $qtd = $_SESSION['carrinho'][$livro['id']];
-            $subtotal = $livro['preco'] * $qtd;
-            $total += $subtotal;
-
-            $capa = $livro['capa_url'] ?? '';
-            $src_imagem = (str_starts_with($capa, 'http://') || str_starts_with($capa, 'https://')) 
-                ? $capa 
-                : "../img_site/" . $capa;
-
-            $itens[] = [
-                'id'         => $livro['id'],
-                'titulo'     => $livro['titulo'],
-                'genero'     => $livro['genero'],
-                'preco'      => $livro['preco'],
-                'imagem_src' => $src_imagem,
-                'quantidade' => $qtd,
-                'subtotal'   => $subtotal
-            ];
-        }
-    }
-    return [$itens, $total];
-}
-
-// Carrega os itens e o total antes do processamento das ações
-list($itens_carrinho, $total_geral) = carregar_itens_carrinho($pdo);
-
-// PROCESSAMENTO DAS AÇÕES DO CARRINHO (Atualizar, Remover, Limpar, Finalizar)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $acao     = $_POST['acao'] ?? '';
+// ============================================================
+// 1. PROCESSAMENTO DAS AÇÕES DO CARRINHO (Atualizar / Remover / Limpar)
+// ============================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     $livro_id = (int)($_POST['livro_id'] ?? 0);
+    $acao     = $_POST['acao'];
 
-    if ($acao === 'atualizar' && $livro_id > 0) {
+    if ($acao === 'atualizar') {
         $qtd = (int)($_POST['quantidade'] ?? 1);
         if ($qtd > 0) {
             $_SESSION['carrinho'][$livro_id] = $qtd;
-            $mensagem = "Quantidade atualizada com sucesso!";
         } else {
             unset($_SESSION['carrinho'][$livro_id]);
-            $mensagem = "Item removido do carrinho!";
         }
-        list($itens_carrinho, $total_geral) = carregar_itens_carrinho($pdo);
-
-    } elseif ($acao === 'remover' && $livro_id > 0) {
+    } elseif ($acao === 'remover') {
         unset($_SESSION['carrinho'][$livro_id]);
-        $mensagem = "Livro removido do carrinho!";
-        list($itens_carrinho, $total_geral) = carregar_itens_carrinho($pdo);
-
     } elseif ($acao === 'limpar') {
         $_SESSION['carrinho'] = [];
-        $mensagem = "Carrinho esvaziado!";
-        $itens_carrinho = [];
-        $total_geral = 0;
+    }
 
-    } elseif ($acao === 'finalizar') {
-        if (!isset($_SESSION['usuario_id'])) {
-            $mensagem = "⚠️ Você precisa estar <a href='login.php'>logado</a> para finalizar a compra.";
-        } elseif (!empty($_SESSION['carrinho'])) {
-            try {
-                $pdo->beginTransaction();
+    header("Location: carrinho.php");
+    exit;
+}
 
-                // 1. Cria o registro do pedido no banco
-                $stmt_ped = $pdo->prepare("INSERT INTO pedidos (usuario_id, total, status) VALUES (?, ?, 'Concluído') RETURNING id");
-                $stmt_ped->execute([$_SESSION['usuario_id'], $total_geral]);
-                $pedido_id = $stmt_ped->fetchColumn();
+// ============================================================
+// 2. CONSULTA DOS LIVROS DO CARRINHO NO BANCO DE DADOS
+// ============================================================
+$livros_carrinho = [];
+$total_carrinho  = 0;
+$ids_carrinho    = array_keys($_SESSION['carrinho']);
 
-                // 2. Registra cada item do carrinho na tabela itens_pedido
-                $stmt_item = $pdo->prepare("INSERT INTO itens_pedido (pedido_id, livro_id, quantidade, preco_unitario) VALUES (?, ?, ?, ?)");
-                foreach ($itens_carrinho as $item) {
-                    $stmt_item->execute([$pedido_id, $item['id'], $item['quantidade'], $item['preco']]);
-                }
+if (!empty($ids_carrinho)) {
+    $placeholders = implode(',', array_fill(0, count($ids_carrinho), '?'));
+    
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM livros WHERE id IN ($placeholders)");
+        $stmt->execute($ids_carrinho);
+        $livros_banco = $stmt->fetchAll();
 
-                $pdo->commit();
-                $_SESSION['carrinho'] = [];
-                $mensagem = "🎉 Compra realizada e registrada com sucesso! Pedido #$pedido_id";
-                $itens_carrinho = [];
-                $total_geral = 0;
-            } catch (Exception $e) {
-                $pdo->rollBack();
-                $mensagem = "Erro ao processar o pedido: " . $e->getMessage();
+        foreach ($livros_banco as $livro) {
+            $id = $livro['id'];
+            $qtd = $_SESSION['carrinho'][$id] ?? 1;
+            $preco = (float)($livro['preco'] ?? 0);
+            $subtotal = $preco * $qtd;
+            $total_carrinho += $subtotal;
+
+            $capa = $livro['capa_url'] ?? $livro['imagem'] ?? '';
+            if (!empty($capa)) {
+                $src_imagem = (str_starts_with($capa, 'http://') || str_starts_with($capa, 'https://')) 
+                    ? $capa 
+                    : "../img_site/" . $capa;
+            } else {
+                $src_imagem = '../img_site/logo_toca.png';
             }
+
+            $livros_carrinho[] = [
+                'id'         => $id,
+                'titulo'     => $livro['titulo'],
+                'autor'      => $livro['autor'] ?? 'Não informado',
+                'preco'      => $preco,
+                'quantidade' => $qtd,
+                'subtotal'   => $subtotal,
+                'imagem'     => $src_imagem
+            ];
         }
+    } catch (PDOException $e) {
+        $erro_bd = "Erro ao buscar itens do carrinho: " . $e->getMessage();
     }
 }
 
-require_once __DIR__ . '/../includes/header.php';
+require_once '../includes/header.php';
 ?>
 
-<main style="max-width: 900px; margin: 30px auto; padding: 20px;">
-    <h2>🛒 Seu Carrinho de Compras</h2>
+<!-- Injeta a imagem prateleira.jpg no plano de fundo do carrinho -->
+<style>
+    body {
+        background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+        background-size: cover !important;
+    }
+</style>
 
-    <?php if ($mensagem): ?>
-        <p style="background: #e2f0d9; color: #155724; padding: 12px; border: 1px solid #c3e6cb; border-radius: 4px;">
-            <strong><?= $mensagem; ?></strong>
+<main class="main-container">
+
+    <!-- CABEÇALHO DA PÁGINA COM SOMBRA NO TEXTO -->
+    <div style="margin-bottom: 25px; text-align: center;">
+        <h2 style="font-size: 28px; font-weight: 800; color: #FFFFFF; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);">
+             Seu Carrinho de Compras
+        </h2>
+        <p style="color: #FFFDE7; font-size: 15px; font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);">
+            Revise seus itens escolhidos antes de fechar o pedido 
         </p>
-    <?php endif; ?>
+    </div>
 
-    <?php if (empty($itens_carrinho)): ?>
-        <div style="text-align: center; padding: 40px; border: 1px dashed #ccc; background: #fff; border-radius: 8px;">
-            <p style="font-size: 18px; color: #666;">O seu carrinho está vazio no momento.</p>
-            <a href="compras.php" style="display: inline-block; padding: 10px 20px; background: #007bff; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                📚 Explorar Livros na Loja
+    <?php if (!empty($livros_carrinho)): ?>
+
+        <!-- AÇÕES DO TOPO -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <a href="compras.php" class="btn-secondary" style="font-size: 12px; padding: 7px 16px;">
+                ← Continuar Comprando
             </a>
-        </div>
-    <?php else: ?>
-        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background: #fff;">
-            <thead style="background: #f2f2f2;">
-                <tr>
-                    <th>Capa</th>
-                    <th>Livro</th>
-                    <th>Gênero</th>
-                    <th>Preço Unitário</th>
-                    <th>Quantidade</th>
-                    <th>Subtotal</th>
-                    <th>Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($itens_carrinho as $item): ?>
-                    <tr>
-                        <td style="text-align: center;">
-                            <img src="<?= htmlspecialchars($item['imagem_src']); ?>" 
-                                 alt="<?= htmlspecialchars($item['titulo']); ?>" 
-                                 width="60">
-                        </td>
-                        <td><strong><?= htmlspecialchars($item['titulo']); ?></strong></td>
-                        <td><?= htmlspecialchars($item['genero'] ?? 'Não informado'); ?></td>
-                        <td>R$ <?= number_format($item['preco'] ?? 0, 2, ',', '.'); ?></td>
-                        <td>
-                            <!-- Form para alterar quantidade -->
-                            <form action="carrinho.php" method="POST" style="display: flex; gap: 5px; align-items: center;">
-                                <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
-                                <input type="hidden" name="acao" value="atualizar">
-                                <input type="number" name="quantidade" value="<?= $item['quantidade']; ?>" min="1" max="99" style="width: 60px; padding: 5px;">
-                                <button type="submit" style="padding: 5px 8px;">Atualizar</button>
-                            </form>
-                        </td>
-                        <td><strong>R$ <?= number_format($item['subtotal'], 2, ',', '.'); ?></strong></td>
-                        <td>
-                            <!-- Form para remover item -->
-                            <form action="carrinho.php" method="POST" onsubmit="return confirm('Deseja remover este item do carrinho?');">
-                                <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
-                                <input type="hidden" name="acao" value="remover">
-                                <button type="submit" style="color: red; padding: 5px 8px; cursor: pointer;">Remover</button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
 
-        <!-- Resumo do Pedido e Botões de Ação -->
-        <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
-            <form action="carrinho.php" method="POST" onsubmit="return confirm('Deseja esvaziar todo o carrinho?');">
+            <form action="carrinho.php" method="POST" onsubmit="return confirm('Tem certeza que deseja esvaziar todo o carrinho?');">
                 <input type="hidden" name="acao" value="limpar">
-                <button type="submit" style="background: #dc3545; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">
-                    🗑️ Esvaziar Carrinho
+                <button type="submit" class="btn-foxy" style="background-color: var(--apple-red) !important; font-size: 12px; padding: 7px 16px;">
+                     Esvaziar Carrinho
                 </button>
             </form>
+        </div>
 
-            <div style="text-align: right;">
-                <h3 style="margin: 0 0 10px 0;">Total: <span style="color: #28a745;">R$ <?= number_format($total_geral, 2, ',', '.'); ?></span></h3>
-                
-                <form action="carrinho.php" method="POST">
-                    <input type="hidden" name="acao" value="finalizar">
-                    <button type="submit" style="background: #28a745; color: #fff; border: none; padding: 12px 25px; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                        ✅ Finalizar Compra
-                    </button>
-                </form>
+        <!-- TABELA ESTILIZADA DE ITENS DO CARRINHO (FUNDO BRANCO SUAVE) -->
+        <div class="tabela-container-compras" style="background-color: rgba(255, 255, 255, 0.93) !important; backdrop-filter: blur(6px);">
+            <table class="tabela-compras">
+                <thead>
+                    <tr>
+                        <th>Capa</th>
+                        <th>Título / Autor</th>
+                        <th>Preço Unitário</th>
+                        <th>Quantidade</th>
+                        <th>Subtotal</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($livros_carrinho as $item): ?>
+                        <tr>
+                            <!-- 1. CAPA -->
+                            <td class="col-capa">
+                                <img src="<?= htmlspecialchars($item['imagem']); ?>" 
+                                     alt="<?= htmlspecialchars($item['titulo']); ?>"
+                                     onerror="this.onerror=null; this.src='../img_site/logo_toca.png';">
+                            </td>
+
+                            <!-- 2. TÍTULO E AUTOR -->
+                            <td class="col-titulo">
+                                <div style="font-size: 15px; font-weight: 800; color: var(--text-dark);">
+                                    <?= htmlspecialchars($item['titulo']); ?>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+                                    por <?= htmlspecialchars($item['autor']); ?>
+                                </div>
+                            </td>
+
+                            <!-- 3. PREÇO UNITÁRIO -->
+                            <td style="font-weight: 700; color: var(--text-dark);">
+                                R$ <?= number_format($item['preco'], 2, ',', '.'); ?>
+                            </td>
+
+                            <!-- 4. QUANTIDADE COM FORMULÁRIO RÁPIDO -->
+                            <td>
+                                <form action="carrinho.php" method="POST" style="display: inline-flex; align-items: center; gap: 6px;">
+                                    <input type="hidden" name="acao" value="atualizar">
+                                    <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
+                                    <input type="number" name="quantidade" value="<?= $item['quantidade']; ?>" min="1" max="99" 
+                                           style="width: 60px; text-align: center; padding: 6px; border-radius: 12px; font-weight: 700;">
+                                    <button type="submit" class="btn-foxy" style="padding: 5px 10px; font-size: 11px;" title="Atualizar quantidade">
+                                        🔄
+                                    </button>
+                                </form>
+                            </td>
+
+                            <!-- 5. SUBTOTAL DO ITEM -->
+                            <td class="col-preco">
+                                R$ <?= number_format($item['subtotal'], 2, ',', '.'); ?>
+                            </td>
+
+                            <!-- 6. REMOVER ITEM -->
+                            <td>
+                                <form action="carrinho.php" method="POST" style="display: inline;">
+                                    <input type="hidden" name="acao" value="remover">
+                                    <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
+                                    <button type="submit" class="btn-foxy" 
+                                            style="background-color: var(--apple-red) !important; padding: 6px 12px; font-size: 12px;" 
+                                            title="Remover este livro">
+                                        ✖
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RESUMO DO PEDIDO E FINALIZAÇÃO DE COMPRA -->
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px; margin-bottom: 40px;">
+            <div class="card-box" style="width: 100%; max-width: 380px; padding: 25px; border: 2.5px solid var(--bg-header); border-radius: 20px; text-align: right; background-color: rgba(255, 255, 255, 0.94) !important; backdrop-filter: blur(8px);">
+                <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; border-bottom: 1px dashed var(--border-soft); padding-bottom: 8px;">
+                    📋 Resumo do Pedido
+                </h3>
+
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">
+                    Total de Livros: <strong><?= array_sum($_SESSION['carrinho']); ?> item(ns)</strong>
+                </p>
+
+                <p style="font-size: 22px; font-weight: 900; color: var(--apple-red); margin-bottom: 20px;">
+                    Total: R$ <?= number_format($total_carrinho, 2, ',', '.'); ?>
+                </p>
+
+                <?php if (isset($_SESSION['usuario_id'])): ?>
+                    <a href="finalizar_compra.php" class="btn-foxy" style="padding: 12px 28px; font-size: 15px; width: 100%; box-sizing: border-box;">
+                         Finalizar Compra
+                    </a>
+                <?php else: ?>
+                    <a href="login.php" class="btn-foxy" style="padding: 12px 28px; font-size: 14px; width: 100%; box-sizing: border-box; background-color: var(--warm-yellow) !important; color: var(--text-dark) !important;">
+                         Faça Login para Finalizar
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
+
+    <?php else: ?>
+
+        <!-- ESTADO QUANDO O CARRINHO ESTÁ VAZIO (VIDRO FOSCO + SUA LOGO) -->
+        <div class="card-box" style="text-align: center; padding: 50px 20px; max-width: 550px; margin: 40px auto; border-radius: 22px; background-color: rgba(255, 255, 255, 0.92) !important; backdrop-filter: blur(8px); border: 2px solid var(--border-soft);">
+            <img src="../img_site/logo_toca.png" alt="A Toca de Leitura" style="width: 110px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));" onerror="this.onerror=null; this.src='../img_site/logo.png';">
+            
+            <h3 style="font-size: 22px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px;">
+                Seu carrinho está vazio!
+            </h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.6;">
+                Parece que você ainda não adicionou nenhum livro à sua toca. Explore nosso acervo e encontre sua próxima leitura!
+            </p>
+            <a href="compras.php" class="btn-foxy" style="padding: 11px 28px; font-size: 14px;">
+                 Ir para a Loja de Livros
+            </a>
+        </div>
+
     <?php endif; ?>
+
 </main>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>

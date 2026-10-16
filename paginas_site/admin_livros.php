@@ -43,7 +43,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <main style="max-width: 1000px; margin: 30px auto; padding: 20px;">
-    <h2>📚 Gestão do Catálogo de Livros</h2>
+    <h2> Gestão do Catálogo de Livros</h2>
     <p><a href="admin.php">← Voltar ao Painel Admin</a></p>
 
     <?php if ($mensagem): ?>
@@ -60,7 +60,7 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- Formulário de Cadastro de Novo Livro -->
     <fieldset style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-        <legend><strong>➕ Cadastrar Novo Livro</strong></legend>
+        <legend><strong> Cadastrar Novo Livro</strong></legend>
         <form action="admin_livros.php" method="POST" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <input type="hidden" name="acao" value="cadastrar">
 
@@ -99,7 +99,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div style="grid-column: span 2;">
                 <button type="submit" style="background: #28a745; color: #fff; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">
-                    ➕ Cadastrar Livro
+                     Cadastrar Livro
                 </button>
             </div>
         </form>
