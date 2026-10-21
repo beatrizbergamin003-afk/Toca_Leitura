@@ -140,8 +140,8 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="capa_url">Nome do Arquivo da Capa ou URL:</label>
-                    <input type="text" id="capa_url" name="capa_url" placeholder="Ex: capa.jpg ou https://link.com/capa.jpg">
+                    <label for="capa_url">Link da Capa:</label>
+                    <input type="text" id="capa_url" name="capa_url" placeholder="Ex: https://link.com/capa.jpg">
                 </div>
 
                 <button type="submit" class="btn-foxy" style="padding: 10px 24px;">

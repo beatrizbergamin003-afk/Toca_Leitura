@@ -1,19 +1,14 @@
 
 <?php 
 require_once __DIR__ . '/../config/db.php';
+iniciar_sessao();
 
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
-if (!defined('BASE_URL')) {
-    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
-}
-
-// Restringe a página apenas para leitores conectados
+// Restringe o acesso apenas para leitores autenticados (usando rotas relativas simples)
 if (function_exists('verificar_autenticacao')) {
     verificar_autenticacao();
 } else {
-    iniciar_sessao();
     if (empty($_SESSION['usuario_id'])) {
-        header('Location: ' . BASE_URL . 'login.php');
+        header('Location: login.php');
         exit;
     }
 }
@@ -24,7 +19,19 @@ $usuario_nome = $_SESSION['usuario_nome'] ?? 'Leitor';
 $mensagem = '';
 $sucesso  = false;
 
-// Processamento do status e cálculo de progresso
+// Lista de gêneros oficiais do site
+$generos_validos = defined('GENEROS_VALIDOS') ? GENEROS_VALIDOS : [
+    'Romance', 
+    'Ficção', 
+    'Fantasia', 
+    'Suspense', 
+    'Terror', 
+    'Mangás e HQs', 
+    'Literatura Infantil', 
+    'Outro'
+];
+
+// Processamento do formulário de atualização de status
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $livro         = trim($_POST['livro'] ?? '');
     $genero        = trim($_POST['genero'] ?? '');
@@ -33,16 +40,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $total_paginas = (int)($_POST['total_paginas'] ?? 0);
     $publicar_feed = isset($_POST['publicar_feed']);
 
-    if (!empty($livro) && $total_paginas > 0) {
-        // Cálculo matemático da porcentagem de conclusão (entre 0% e 100%)
+    try {
+        // 1. Validação dos campos obrigatórios
+        if (empty($livro) || $total_paginas <= 0) {
+            throw new Exception("Informe um nome de livro válido e um total de páginas maior que zero.");
+        }
+
+        // 2. Validação Estrita de Gênero (Bloqueia gêneros inventados)
+        if (function_exists('validar_genero')) {
+            if (!validar_genero($genero)) {
+                throw new Exception("Gênero incorreto ou não permitido no sistema. Selecione uma opção válida.");
+            }
+        } else {
+            $generos_validos_lower = array_map('mb_strtolower', $generos_validos);
+            if (!in_array(mb_strtolower($genero), $generos_validos_lower, true)) {
+                throw new Exception("Gênero inválido! Escolha uma opção disponível na lista do site.");
+            }
+        }
+
+        // 3. Validação de Existência do Livro no Banco de Dados
+        if (function_exists('verificar_livro_existente') && !verificar_livro_existente($pdo, $livro)) {
+            throw new Exception("O livro '" . htmlspecialchars($livro) . "' não consta no catálogo da biblioteca.");
+        }
+
+        // Cálculo da porcentagem de progresso (0% a 100%)
         $progresso_pct = min(100, max(0, (int)round(($paginas_lidas / $total_paginas) * 100)));
 
-        // Lógica de upsert: Verifica se o leitor já possui um progresso registrado
+        // Grava ou atualiza os dados de leitura do leitor (Upsert)
         $stmt_check = $pdo->prepare("SELECT id FROM historico_leitura WHERE usuario_id = ?");
         $stmt_check->execute([$usuario_id]);
 
         if ($stmt_check->rowCount() > 0) {
-            // Update: Atualiza os dados de leitura existentes
             $stmt = $pdo->prepare("
                 UPDATE historico_leitura
                 SET livro_nome = ?, genero = ?, tempo_leitura = ?, paginas_lidas = ?, total_paginas = ?, progresso_pct = ?, atualizado_em = CURRENT_TIMESTAMP
@@ -50,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([$livro, $genero, $tempo, $paginas_lidas, $total_paginas, $progresso_pct, $usuario_id]);
         } else {
-            // Insert: Cria registro inicial de leitura
             $stmt = $pdo->prepare("
                 INSERT INTO historico_leitura (usuario_id, livro_nome, genero, tempo_leitura, paginas_lidas, total_paginas, progresso_pct)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -58,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$usuario_id, $livro, $genero, $tempo, $paginas_lidas, $total_paginas, $progresso_pct]);
         }
 
-        // Integração automática: Gera uma postagem no Feed comunitário se selecionado
+        // Publica automaticamente no feed social se o checkbox for selecionado
         if ($publicar_feed) {
             $texto_post = "Atualizei meu progresso de leitura! Já li " . $paginas_lidas . " de " . $total_paginas . " páginas (" . $progresso_pct . "%).";
             $stmt_post = $pdo->prepare("
@@ -70,8 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $mensagem = "Status e progresso de leitura atualizados com sucesso!";
         $sucesso  = true;
-    } else {
-        $mensagem = "Por favor, preencha o nome do livro e um total de páginas maior que zero!";
+
+    } catch (Exception $e) {
+        $mensagem = $e->getMessage();
         $sucesso  = false;
     }
 }
@@ -81,7 +109,6 @@ $stmt_atual = $pdo->prepare("SELECT * FROM historico_leitura WHERE usuario_id = 
 $stmt_atual->execute([$usuario_id]);
 $status = $stmt_atual->fetch();
 
-// Atribui valores diretos sem dupla conversão de codificação
 $livro_atual  = $status['livro_nome'] ?? '';
 $genero_atual = $status['genero'] ?? '';
 $tempo_atual  = $status['tempo_leitura'] ?? '';
@@ -98,7 +125,7 @@ require_once __DIR__ . '/../includes/header.php';
 
     <section class="status-container">
         
-        <!-- CABEÇALHO -->
+        <!-- CABEÇALHO DA PÁGINA -->
         <div class="status-header">
             <h2>Atualizar Status e Progresso de Leitura</h2>
             <p>Informe quantas páginas você já leu e acompanhe a sua evolução literária!</p>
@@ -127,7 +154,7 @@ require_once __DIR__ . '/../includes/header.php';
                     Páginas lidas: <strong><?= $paginas_lidas_atual; ?></strong> de <strong><?= $total_paginas_atual; ?></strong>
                 </p>
 
-                <!-- RENDERIZAÇÃO DA BARRA DE PROGRESSO EM ROXO -->
+                <!-- BARRA DE PROGRESSO EM ROXO -->
                 <div class="progresso-container" style="margin: 0;">
                     <div class="progresso-texto">
                         <span>Progresso do Leitor</span>
@@ -141,7 +168,7 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
 
         <!-- FORMULÁRIO DE ENTRADA DE LEITURA -->
-        <form action="<?= BASE_URL; ?>atualizar_status.php" method="POST">
+        <form action="atualizar_status.php" method="POST">
             <div class="form-group">
                 <label for="livro">Livro que está lendo:</label>
                 <input type="text" id="livro" name="livro" value="<?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($livro_atual) : $livro_atual); ?>" placeholder="Ex: Corte de Espinhos e Rosas" required>
@@ -149,7 +176,14 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div class="form-group">
                 <label for="genero">Gênero Literário:</label>
-                <input type="text" id="genero" name="genero" value="<?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($genero_atual) : $genero_atual); ?>" placeholder="Ex: Fantasia, Romance, Suspense..." required>
+                <select id="genero" name="genero" required>
+                    <option value="">-- Selecione um Gênero --</option>
+                    <?php foreach ($generos_validos as $g): ?>
+                        <option value="<?= $g; ?>" <?= (strcasecmp($g, $genero_atual) === 0) ? 'selected' : ''; ?>>
+                            <?= $g; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="form-group">
@@ -181,7 +215,7 @@ require_once __DIR__ . '/../includes/header.php';
         </form>
 
         <div class="cadastro-footer">
-            <a href="<?= BASE_URL; ?>estante.php">&larr; Voltar para Minha Estante</a>
+            <a href="estante.php">&larr; Voltar para Minha Estante</a>
         </div>
 
     </section>

@@ -2,18 +2,13 @@
 <?php 
 require_once __DIR__ . '/../config/db.php';
 
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
-if (!defined('BASE_URL')) {
-    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
-}
-
 // Bloqueia o acesso de visitantes que não fizeram login
 if (function_exists('verificar_autenticacao')) {
     verificar_autenticacao();
 } else {
     iniciar_sessao();
     if (empty($_SESSION['usuario_id'])) {
-        header('Location: ' . BASE_URL . 'login.php');
+        header('Location: login.php');
         exit;
     }
 }
@@ -22,13 +17,25 @@ $usuario_id   = $_SESSION['usuario_id'];
 $usuario_nome = $_SESSION['usuario_nome'] ?? 'Leitor';
 $mensagem     = '';
 
+// Lista oficial de gêneros permitidos
+$generos_validos = defined('GENEROS_VALIDOS') ? GENEROS_VALIDOS : [
+    'Romance', 
+    'Ficção', 
+    'Fantasia', 
+    'Suspense', 
+    'Terror', 
+    'Mangás e HQs', 
+    'Literatura Infantil', 
+    'Outro'
+];
+
 // ============================================================
 // PROCESSAMENTO DAS AÇÕES NA TABELA: historico_leitura
 // ============================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
 
-    // 1. INSERIR LIVRO NA TABELA historico_leitura
+    // 1. INSERIR LIVRO NA TABELA historico_leitura (COM TRAVA DE EXISTÊNCIA NO SITE)
     if ($acao === 'adicionar') {
         $livro_nome    = trim($_POST['livro_nome'] ?? '');
         $genero        = trim($_POST['genero'] ?? '');
@@ -36,21 +43,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $paginas_lidas = (int)($_POST['paginas_lidas'] ?? 0);
         $total_paginas = (int)($_POST['total_paginas'] ?? 0);
 
-        if (!empty($livro_nome) && $total_paginas > 0) {
+        try {
+            // Validação 1: Campos obrigatórios
+            if (empty($livro_nome) || $total_paginas <= 0) {
+                throw new Exception("Preencha o título do livro e o total de páginas!");
+            }
+
+            // Validação 2: Trava de Livro Inexistente no Acervo do Site
+            if (function_exists('verificar_livro_existente')) {
+                if (!verificar_livro_existente($pdo, $livro_nome)) {
+                    throw new Exception("O livro '" . htmlspecialchars($livro_nome) . "' não consta no catálogo do site. Cadastre apenas livros disponíveis!");
+                }
+            } else {
+                $stmt_check = $pdo->prepare("SELECT id FROM livros WHERE LOWER(TRIM(titulo)) = LOWER(TRIM(?)) LIMIT 1");
+                $stmt_check->execute([$livro_nome]);
+                if (!$stmt_check->fetch()) {
+                    throw new Exception("O livro '" . htmlspecialchars($livro_nome) . "' não consta no catálogo do site. Cadastre apenas livros disponíveis!");
+                }
+            }
+
+            // Validação 3: Gênero Permitido
+            if (function_exists('validar_genero')) {
+                if (!validar_genero($genero)) {
+                    throw new Exception("Gênero inválido! Selecione uma opção disponível na lista.");
+                }
+            } else {
+                $generos_validos_lower = array_map('mb_strtolower', $generos_validos);
+                if (!in_array(mb_strtolower($genero), $generos_validos_lower, true)) {
+                    throw new Exception("Gênero inválido! Selecione uma opção disponível na lista.");
+                }
+            }
+
             $progresso_pct = min(100, (int)round(($paginas_lidas / $total_paginas) * 100));
 
             $sql = "INSERT INTO historico_leitura (usuario_id, livro_nome, genero, tempo_leitura, paginas_lidas, total_paginas, progresso_pct) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            
-            if ($stmt->execute([$usuario_id, $livro_nome, $genero, $tempo_leitura, $paginas_lidas, $total_paginas, $progresso_pct])) {
-                header("Location: " . BASE_URL . "estante.php?sucesso=adicionado");
-                exit;
-            } else {
-                $mensagem = "Erro ao adicionar o livro no seu histórico de leitura.";
-            }
-        } else {
-            $mensagem = "Preencha o título do livro e o total de páginas!";
+            $stmt->execute([$usuario_id, $livro_nome, $genero, $tempo_leitura, $paginas_lidas, $total_paginas, $progresso_pct]);
+
+            header("Location: estante.php?sucesso=adicionado");
+            exit;
+
+        } catch (Exception $e) {
+            $mensagem = $e->getMessage();
         }
     }
 
@@ -69,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$paginas_lidas, $total_paginas, $progresso_pct, $id, $usuario_id]);
 
-            header("Location: " . BASE_URL . "estante.php?sucesso=atualizado");
+            header("Location: estante.php?sucesso=atualizado");
             exit;
         }
     }
@@ -82,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("DELETE FROM historico_leitura WHERE id = ? AND usuario_id = ?");
             $stmt->execute([$id, $usuario_id]);
 
-            header("Location: " . BASE_URL . "estante.php?sucesso=removido");
+            header("Location: estante.php?sucesso=removido");
             exit;
         }
     }
@@ -141,7 +176,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         <?php endif; ?>
 
-        <?php if ($mensagem): ?>
+        <?php if (!empty($mensagem)): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center;">
                 <?= htmlspecialchars($mensagem); ?>
             </div>
@@ -173,7 +208,7 @@ require_once __DIR__ . '/../includes/header.php';
                 Cadastrar Nova Leitura no Histórico
             </h3>
             
-            <form action="<?= BASE_URL; ?>estante.php" method="POST">
+            <form action="estante.php" method="POST">
                 <input type="hidden" name="acao" value="adicionar">
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
@@ -184,15 +219,11 @@ require_once __DIR__ . '/../includes/header.php';
 
                     <div class="form-group" style="margin-bottom: 0;">
                         <label for="genero">Gênero:</label>
-                        <select id="genero" name="genero">
-                            <option value="Romance">Romance</option>
-                            <option value="Ficção">Ficção</option>
-                            <option value="Fantasia">Fantasia</option>
-                            <option value="Suspense">Suspense</option>
-                            <option value="Terror">Terror</option>
-                            <option value="Mangás e HQs">Mangás e HQs</option>
-                            <option value="Literatura Infantil">Literatura Infantil</option>
-                            <option value="Outro">Outro</option>
+                        <select id="genero" name="genero" required>
+                            <option value="">-- Selecione um Gênero --</option>
+                            <?php foreach ($generos_validos as $g): ?>
+                                <option value="<?= $g; ?>"><?= $g; ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
@@ -222,10 +253,10 @@ require_once __DIR__ . '/../includes/header.php';
 
         <!-- ABAS DE NAVEGAÇÃO / FILTROS -->
         <div class="estante-tabs">
-            <a href="<?= BASE_URL; ?>estante.php?status=todos" class="tab-btn <?= $status_filtro === 'todos' ? 'active' : ''; ?>">Todos (<?= count($leituras); ?>)</a>
-            <a href="<?= BASE_URL; ?>estante.php?status=lendo" class="tab-btn <?= $status_filtro === 'lendo' ? 'active' : ''; ?>">Lendo (<?= $total_lendo; ?>)</a>
-            <a href="<?= BASE_URL; ?>estante.php?status=lido" class="tab-btn <?= $status_filtro === 'lido' ? 'active' : ''; ?>">Lidos (<?= $total_lidos; ?>)</a>
-            <a href="<?= BASE_URL; ?>estante.php?status=nao_iniciado" class="tab-btn <?= $status_filtro === 'nao_iniciado' ? 'active' : ''; ?>">Não Iniciados (<?= $total_quero; ?>)</a>
+            <a href="estante.php?status=todos" class="tab-btn <?= $status_filtro === 'todos' ? 'active' : ''; ?>">Todos (<?= count($leituras); ?>)</a>
+            <a href="estante.php?status=lendo" class="tab-btn <?= $status_filtro === 'lendo' ? 'active' : ''; ?>">Lendo (<?= $total_lendo; ?>)</a>
+            <a href="estante.php?status=lido" class="tab-btn <?= $status_filtro === 'lido' ? 'active' : ''; ?>">Lidos (<?= $total_lidos; ?>)</a>
+            <a href="estante.php?status=nao_iniciado" class="tab-btn <?= $status_filtro === 'nao_iniciado' ? 'active' : ''; ?>">Não Iniciados (<?= $total_quero; ?>)</a>
         </div>
 
         <!-- GRID DE LIVROS DO HISTÓRICO -->
@@ -282,7 +313,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
 
                         <!-- ATUALIZAR PROGRESSO DE PÁGINAS -->
-                        <form action="<?= BASE_URL; ?>estante.php" method="POST" style="margin-top: 12px; background-color: #FAF5FF; padding: 10px; border-radius: 10px; border: 1px solid var(--border-soft);">
+                        <form action="estante.php" method="POST" style="margin-top: 12px; background-color: #FAF5FF; padding: 10px; border-radius: 10px; border: 1px solid var(--border-soft);">
                             <input type="hidden" name="acao" value="atualizar">
                             <input type="hidden" name="id" value="<?= $item['id']; ?>">
                             <input type="hidden" name="total_paginas" value="<?= $total_paginas; ?>">
@@ -293,8 +324,8 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                         </form>
 
-                        <!-- BOTAO DE REMOVER -->
-                        <form action="<?= BASE_URL; ?>estante.php" method="POST" style="margin-top: 10px; text-align: right;" onsubmit="return confirm('Deseja realmente remover este livro da sua estante?');">
+                        <!-- BOTÃO DE REMOVER -->
+                        <form action="estante.php" method="POST" style="margin-top: 10px; text-align: right;" onsubmit="return confirm('Deseja realmente remover este livro da sua estante?');">
                             <input type="hidden" name="acao" value="remover">
                             <input type="hidden" name="id" value="<?= $item['id']; ?>">
                             <button type="submit" style="background: none; border: none; color: var(--apple-red); font-size: 12px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">

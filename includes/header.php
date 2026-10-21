@@ -35,9 +35,9 @@ if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
                 <a href="<?= BASE_URL; ?>index.php">
                     <img src="/projetointegrador_tocaleitura/img_site/logo_toca.png" alt="Logo A Toca de Leitura" class="logo-site" onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo.png';">
                     <div>
-                        <h1>A Toca de Leitura 🍎</h1>
+                        <h1>A Toca de Leitura</h1>
                         <?php if (isset($_SESSION['usuario_id'])): ?>
-                            <p>Bem-vindo(a), <strong><?= htmlspecialchars($_SESSION['usuario_nome']); ?></strong>!</p>
+                            <p>Bem-vindo(a), <strong><?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($_SESSION['usuario_nome']) : $_SESSION['usuario_nome']); ?></strong>!</p>
                         <?php endif; ?>
                     </div>
                 </a>
@@ -61,13 +61,13 @@ if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
                     
                     <li>
                         <a href="<?= BASE_URL; ?>carrinho.php">
-                             Carrinho (<?= $total_itens_carrinho; ?>)
+                            Carrinho (<?= $total_itens_carrinho; ?>)
                         </a>
                     </li>
 
                     <?php if (isset($_SESSION['usuario_id'])): ?>
                         <?php if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true): ?>
-                            <li><a href="<?= BASE_URL; ?>admin.php" style="color: #FFC107;"> Admin</a></li>
+                            <li><a href="<?= BASE_URL; ?>admin.php" style="color: #FFC107;">Admin</a></li>
                         <?php endif; ?>
 
                         <li><a href="<?= BASE_URL; ?>deletar_usuario.php" style="background: rgba(198, 40, 40, 0.4);">Deletar Conta</a></li>

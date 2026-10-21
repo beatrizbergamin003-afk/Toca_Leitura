@@ -3,6 +3,11 @@
 require_once __DIR__ . '/../config/db.php';
 iniciar_sessao();
 
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: /projetointegrador_tocaleitura/paginas_site/login.php");
+    exit;
+}
+
 // Garante o fallback de BASE_URL caso não esteja definida no db.php
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
@@ -53,9 +58,9 @@ if (!empty($ids_carrinho)) {
         $livros_banco = $stmt->fetchAll();
 
         foreach ($livros_banco as $livro) {
-            $id = $livro['id'];
-            $qtd = $_SESSION['carrinho'][$id] ?? 1;
-            $preco = (float)($livro['preco'] ?? 0);
+            $id       = $livro['id'];
+            $qtd      = $_SESSION['carrinho'][$id] ?? 1;
+            $preco    = (float)($livro['preco'] ?? 0);
             $subtotal = $preco * $qtd;
             $total_carrinho += $subtotal;
 
@@ -94,12 +99,12 @@ require_once __DIR__ . '/../includes/header.php';
     }
 </style>
 
-<main class="main-container">
+<main class="page-carrinho-bg">
 
     <!-- CABEÇALHO DA PÁGINA COM SOMBRA NO TEXTO -->
     <div style="margin-bottom: 25px; text-align: center;">
         <h2 style="font-size: 28px; font-weight: 800; color: #FFFFFF; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);">
-             Seu Carrinho de Compras
+            Seu Carrinho de Compras
         </h2>
         <p style="color: #FFFDE7; font-size: 15px; font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);">
             Revise seus itens escolhidos antes de fechar o pedido
@@ -109,7 +114,7 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- MENSAGEM DE ERRO CASO HOUVER -->
     <?php if (isset($_GET['erro'])): ?>
         <div style="max-width: 800px; margin: 0 auto 20px auto; background-color: #FEF3C7; color: #B45309; padding: 14px 20px; border-radius: 12px; border: 1.5px solid #FCD34D; font-weight: 800; text-align: center; font-size: 14px;">
-             <?= htmlspecialchars($_GET['erro']); ?>
+            <?= htmlspecialchars($_GET['erro']); ?>
         </div>
     <?php endif; ?>
 
@@ -118,13 +123,13 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- AÇÕES DO TOPO COM ESTILO ROXO MÁGICO -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
             <a href="<?= BASE_URL; ?>compras.php" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; text-decoration: none;">
-                ← Continuar Comprando
+                &larr; Continuar Comprando
             </a>
 
             <form action="<?= BASE_URL; ?>carrinho.php" method="POST" onsubmit="return confirm('Tem certeza que deseja esvaziar todo o carrinho?');">
                 <input type="hidden" name="acao" value="limpar">
                 <button type="submit" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; cursor: pointer;">
-                     Esvaziar Carrinho
+                    Esvaziar Carrinho
                 </button>
             </form>
         </div>
@@ -143,22 +148,25 @@ require_once __DIR__ . '/../includes/header.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($livros_carrinho as $item): ?>
+                    <?php foreach ($livros_carrinho as $item): 
+                        $titulo_utf8 = function_exists('fix_utf8') ? fix_utf8($item['titulo']) : $item['titulo'];
+                        $autor_utf8  = function_exists('fix_utf8') ? fix_utf8($item['autor']) : $item['autor'];
+                    ?>
                         <tr>
                             <!-- 1. CAPA -->
                             <td class="col-capa">
                                 <img src="<?= htmlspecialchars($item['imagem']); ?>" 
-                                     alt="<?= htmlspecialchars($item['titulo']); ?>"
+                                     alt="<?= htmlspecialchars($titulo_utf8); ?>"
                                      onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo_toca.png';">
                             </td>
 
                             <!-- 2. TÍTULO E AUTOR -->
                             <td class="col-titulo">
                                 <div style="font-size: 15px; font-weight: 800; color: var(--text-dark);">
-                                    <?= htmlspecialchars($item['titulo']); ?>
+                                    <?= htmlspecialchars($titulo_utf8); ?>
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
-                                    por <?= htmlspecialchars($item['autor']); ?>
+                                    por <?= htmlspecialchars($autor_utf8); ?>
                                 </div>
                             </td>
 
@@ -175,7 +183,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <input type="number" name="quantidade" value="<?= $item['quantidade']; ?>" min="1" max="99" 
                                            style="width: 60px; text-align: center; padding: 6px; border-radius: 12px; font-weight: 700; border: 1.5px solid var(--border-soft);">
                                     <button type="submit" class="btn-foxy" style="padding: 6px 10px; font-size: 11px; cursor: pointer;" title="Atualizar quantidade">
-                                        
+                                        Atualizar
                                     </button>
                                 </form>
                             </td>
@@ -193,7 +201,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <button type="submit" class="btn-foxy" 
                                             style="padding: 6px 12px; font-size: 12px; cursor: pointer;" 
                                             title="Remover este livro">
-                                        
+                                        Remover
                                     </button>
                                 </form>
                             </td>
@@ -207,7 +215,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div style="display: flex; justify-content: flex-end; margin-top: 20px; margin-bottom: 40px;">
             <div class="card-box" style="width: 100%; max-width: 380px; padding: 25px; border: 2.5px solid var(--bg-header); border-radius: 20px; text-align: right; background-color: rgba(255, 255, 255, 0.94) !important; backdrop-filter: blur(8px);">
                 <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; border-bottom: 1px dashed var(--border-soft); padding-bottom: 8px;">
-                     Resumo do Pedido
+                    Resumo do Pedido
                 </h3>
 
                 <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">
@@ -222,12 +230,12 @@ require_once __DIR__ . '/../includes/header.php';
                     <!-- FORMULÁRIO POST PARA FINALIZAR A COMPRA -->
                     <form action="<?= BASE_URL; ?>finalizar_compra.php" method="POST" style="width: 100%;">
                         <button type="submit" class="btn-foxy" style="padding: 12px 28px; font-size: 15px; width: 100%; box-sizing: border-box; cursor: pointer;">
-                             Finalizar Pedido
+                            Finalizar Pedido
                         </button>
                     </form>
                 <?php else: ?>
                     <a href="<?= BASE_URL; ?>login.php" class="btn-foxy" style="padding: 12px 28px; font-size: 14px; width: 100%; box-sizing: border-box; display: block; text-align: center; text-decoration: none;">
-                         Faça Login para Finalizar
+                        Faça Login para Finalizar
                     </a>
                 <?php endif; ?>
             </div>
@@ -246,7 +254,7 @@ require_once __DIR__ . '/../includes/header.php';
                 Parece que você ainda não adicionou nenhum livro à sua toca. Explore nosso acervo e encontre sua próxima leitura!
             </p>
             <a href="<?= BASE_URL; ?>compras.php" class="btn-foxy" style="padding: 11px 28px; font-size: 14px; text-decoration: none;">
-                 Ir para a Loja de Livros
+                Ir para a Loja de Livros
             </a>
         </div>
 
@@ -254,5 +262,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 </main>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<div style="background-color: #FFFFFF; width: 100%;">
+    <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+</div>
 

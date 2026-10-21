@@ -6,7 +6,7 @@ if (!defined('BASE_URL')) {
 ?>
 <hr>
 <!-- Rodapé do Site -->
-<footer>
+<footer class="foot">
     <!-- Exibe o ano atual dinamicamente via PHP -->
     <p>&copy; <?= date('Y'); ?> <strong>A Toca de Leitura</strong>. Todos os direitos reservados.</p>
     
