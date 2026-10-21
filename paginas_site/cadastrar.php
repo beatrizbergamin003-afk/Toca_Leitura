@@ -1,5 +1,11 @@
+
 <?php 
-require_once '../config/db.php';
+require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 $mensagem = '';
 
@@ -19,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
 
             if ($stmt->execute([$nome, $email, $senha_hash])) {
-                header("Location: login.php?sucesso=cadastrado");
+                header("Location: " . BASE_URL . "login.php?sucesso=cadastrado");
                 exit;
             } else {
                 $mensagem = "Erro ao fazer cadastro.";
@@ -30,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <!-- CONTAINER COM A CLASSE DA IMAGEM DE FUNDO -->
@@ -47,7 +53,7 @@ require_once '../includes/header.php';
             </div>
         <?php endif; ?>
 
-        <form action="cadastrar.php" method="POST">
+        <form action="<?= BASE_URL; ?>cadastrar.php" method="POST">
             <div class="form-group">
                 <label for="nome">Nome Completo:</label>
                 <input type="text" id="nome" name="nome" placeholder="Seu nome completo" value="<?= htmlspecialchars($nome ?? ''); ?>" required>
@@ -67,9 +73,10 @@ require_once '../includes/header.php';
         </form>
 
         <div class="cadastro-footer">
-            Já possui uma conta? <a href="login.php">Faça login aqui</a>
+            Já possui uma conta? <a href="<?= BASE_URL; ?>login.php">Faça login aqui</a>
         </div>
     </section>
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

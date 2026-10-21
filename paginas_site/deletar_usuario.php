@@ -1,5 +1,11 @@
+
 <?php 
-require_once '../config/db.php';
+require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Bloqueia acesso de leitores não autenticados
 if (function_exists('verificar_autenticacao')) {
@@ -7,7 +13,7 @@ if (function_exists('verificar_autenticacao')) {
 } else {
     iniciar_sessao();
     if (empty($_SESSION['usuario_id'])) {
-        header('Location: login.php');
+        header('Location: ' . BASE_URL . 'login.php');
         exit;
     }
 }
@@ -21,7 +27,7 @@ $target_id = (int)($_GET['id'] ?? $_POST['id'] ?? $usuario_id);
 
 // Apenas admin pode excluir contas de terceiros
 if ($target_id !== $usuario_id && !$is_admin) {
-    header('Location: index.php');
+    header('Location: ' . BASE_URL . 'index.php');
     exit;
 }
 
@@ -35,7 +41,7 @@ try {
 }
 
 if (!$usuario_alvo) {
-    header('Location: index.php');
+    header('Location: ' . BASE_URL . 'index.php');
     exit;
 }
 
@@ -73,11 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($target_id === $usuario_id) {
                 session_unset();
                 session_destroy();
-                header("Location: index.php?msg=conta_removida");
+                header("Location: " . BASE_URL . "index.php?msg=conta_removida");
                 exit;
             } else {
                 // Se o admin excluiu outro usuário, retorna ao painel de gerenciamento
-                header("Location: admin_usuarios.php?sucesso=usuario_deletado");
+                header("Location: " . BASE_URL . "admin_usuarios.php?sucesso=usuario_deletado");
                 exit;
             }
         } catch (PDOException $e) {
@@ -86,7 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require_once '../includes/header.php';
+$alvo_nome_utf8  = mb_convert_encoding($usuario_alvo['nome'] ?? '', 'UTF-8', 'ISO-8859-1');
+$alvo_email_utf8 = mb_convert_encoding($usuario_alvo['email'] ?? '', 'UTF-8', 'ISO-8859-1');
+
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
@@ -97,7 +106,7 @@ require_once '../includes/header.php';
         <!-- CABEÇALHO DA PÁGINA -->
         <div class="deletar-header">
             <h2> Deletar Conta de Usuário</h2>
-            <p>Você está prestes a apagar a conta de <strong><?= htmlspecialchars($usuario_alvo['nome']); ?></strong> (<?= htmlspecialchars($usuario_alvo['email']); ?>).</p>
+            <p>Você está prestes a apagar a conta de <strong><?= htmlspecialchars($alvo_nome_utf8); ?></strong> (<?= htmlspecialchars($alvo_email_utf8); ?>).</p>
         </div>
 
         <!-- MENSAGEM DE ERRO EM TOM AMBER SUAVE -->
@@ -118,7 +127,7 @@ require_once '../includes/header.php';
         </div>
 
         <!-- FORMULÁRIO DE CONFIRMAÇÃO DE SEGURANÇA -->
-        <form action="deletar_usuario.php?id=<?= $target_id; ?>" method="POST" onsubmit="return confirm('Tem certeza de que deseja apagar permanentemente sua conta?');">
+        <form action="<?= BASE_URL; ?>deletar_usuario.php?id=<?= $target_id; ?>" method="POST" onsubmit="return confirm('Tem certeza de que deseja apagar permanentemente sua conta?');">
             <input type="hidden" name="id" value="<?= $target_id; ?>">
 
             <?php if ($target_id === $usuario_id): ?>
@@ -133,13 +142,13 @@ require_once '../includes/header.php';
                 </div>
             <?php endif; ?>
 
-            <button type="submit" class="btn-foxy btn-submit-block" style="margin-top: 10px;">
-                Apagar Conta Definitivamente (DELETE)
+            <button type="submit" class="btn-foxy btn-submit-block" style="margin-top: 10px; background-color: var(--apple-red) !important;">
+                 Apagar Conta Definitivamente
             </button>
         </form>
 
         <div class="cadastro-footer">
-            <a href="<?= $is_admin && $target_id !== $usuario_id ? 'admin_usuarios.php' : 'index.php'; ?>">
+            <a href="<?= BASE_URL . ($is_admin && $target_id !== $usuario_id ? 'admin_usuarios.php' : 'index.php'); ?>">
                 ← Cancelar e Voltar
             </a>
         </div>
@@ -148,4 +157,5 @@ require_once '../includes/header.php';
 
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

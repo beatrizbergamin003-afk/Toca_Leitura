@@ -2,13 +2,18 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
+
 // Bloqueia acesso de usuários que não são administradores
 if (function_exists('verificar_admin')) {
     verificar_admin();
 } else {
     iniciar_sessao();
     if (empty($_SESSION['is_admin'])) {
-        header('Location: index.php');
+        header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
@@ -71,7 +76,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- CABEÇALHO DA PÁGINA -->
         <div style="margin-bottom: 25px;">
             <h2 style="font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
-                📦 Gerenciamento e Histórico de Pedidos
+                 Gerenciamento e Histórico de Pedidos
             </h2>
             <p style="color: var(--text-muted); font-size: 14px; margin: 0;">
                 Acompanhe as compras dos leitores, verifique os livros adquiridos e gerencie o status de entrega.
@@ -81,19 +86,19 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- MENSAGENS DE FEEDBACK VISUAL -->
         <?php if (!empty($mensagem)): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                ✨ <?= htmlspecialchars($mensagem); ?>
+                 <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
         <?php if (!empty($erro)): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                ⚠️ <?= htmlspecialchars($erro); ?>
+                 <?= htmlspecialchars($erro); ?>
             </div>
         <?php endif; ?>
 
         <?php if (!$has_pedidos_table): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 16px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-size: 14px;">
-                ⚠️ <strong>Aviso:</strong> A tabela de pedidos (<code>pedidos</code> ou <code>compras</code>) ainda não foi encontrada no seu banco de dados local.
+                 <strong>Aviso:</strong> A tabela de pedidos (<code>pedidos</code> ou <code>compras</code>) ainda não foi encontrada no seu banco de dados local.
             </div>
         <?php endif; ?>
 
@@ -101,9 +106,16 @@ require_once __DIR__ . '/../includes/header.php';
         <?php if (!empty($pedidos)): ?>
             <?php foreach ($pedidos as $pedido): 
                 $p_id           = $pedido['id'];
-                $cliente_nome   = $pedido['cliente_nome'] ?? $pedido['usuario_nome'] ?? 'Visitante / Removido';
-                $cliente_email  = $pedido['cliente_email'] ?? $pedido['usuario_email'] ?? 'N/A';
-                $status_atual   = $pedido['status'] ?? $pedido['situacao'] ?? 'Pendente';
+                
+                $cliente_nome_raw  = $pedido['cliente_nome'] ?? $pedido['usuario_nome'] ?? 'Visitante / Removido';
+                $cliente_nome      = mb_convert_encoding($cliente_nome_raw, 'UTF-8', 'ISO-8859-1');
+                
+                $cliente_email_raw = $pedido['cliente_email'] ?? $pedido['usuario_email'] ?? 'N/A';
+                $cliente_email     = mb_convert_encoding($cliente_email_raw, 'UTF-8', 'ISO-8859-1');
+                
+                $status_atual_raw  = $pedido['status'] ?? $pedido['situacao'] ?? 'Pendente';
+                $status_atual      = mb_convert_encoding($status_atual_raw, 'UTF-8', 'ISO-8859-1');
+                
                 $raw_data       = $pedido['data_pedido'] ?? $pedido['criado_em'] ?? $pedido['data'] ?? null;
                 $data_formatada = $raw_data ? date('d/m/Y \à\s H:i', strtotime($raw_data)) : 'Recente';
 
@@ -147,7 +159,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;">🕒 <?= $data_formatada; ?></span>
+                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;"> <?= $data_formatada; ?></span>
                             <span style="<?= $status_style; ?> font-weight: 800; padding: 4px 12px; border-radius: 12px; font-size: 11px; text-transform: uppercase;">
                                 <?= htmlspecialchars($status_atual); ?>
                             </span>
@@ -172,7 +184,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         $capa = $item['capa_url'] ?? '';
                                         $src_imagem = (str_starts_with($capa, 'http://') || str_starts_with($capa, 'https://')) 
                                             ? $capa 
-                                            : "../img_site/" . ($capa ?: 'padrao.jpg');
+                                            : "/projetointegrador_tocaleitura/img_site/" . ($capa ?: 'padrao.jpg');
                                         
                                         $qtd = (int)($item['quantidade'] ?? 1);
                                         
@@ -184,13 +196,16 @@ require_once __DIR__ . '/../includes/header.php';
 
                                         $subtotal = $qtd * $preco_un;
                                         $total_pedido_calculado += $subtotal;
+                                        
+                                        $titulo_livro_raw = $item['titulo'] ?? 'Livro';
+                                        $titulo_livro     = mb_convert_encoding($titulo_livro_raw, 'UTF-8', 'ISO-8859-1');
                                     ?>
                                         <tr style="border-bottom: 1px solid var(--border-soft);">
                                             <td style="padding: 8px; text-align: center;">
-                                                <img src="<?= htmlspecialchars($src_imagem); ?>" alt="Capa" style="width: 35px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-soft);" onerror="this.src='../img_site/logo_toca.png';">
+                                                <img src="<?= htmlspecialchars($src_imagem); ?>" alt="Capa" style="width: 35px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-soft);" onerror="this.src='/projetointegrador_tocaleitura/img_site/logo_toca.png';">
                                             </td>
                                             <td style="padding: 8px; font-weight: 800; color: var(--text-dark);">
-                                                <?= htmlspecialchars(mb_convert_encoding($item['titulo'] ?? 'Livro', 'UTF-8', 'ISO-8859-1')); ?>
+                                                <?= htmlspecialchars($titulo_livro); ?>
                                             </td>
                                             <td style="padding: 8px; font-weight: 800; color: var(--fox-purple);"><?= $qtd; ?>x</td>
                                             <td style="padding: 8px; color: var(--text-dark);">R$ <?= number_format($preco_un, 2, ',', '.'); ?></td>
@@ -210,7 +225,7 @@ require_once __DIR__ . '/../includes/header.php';
                         }
                     ?>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background-color: #FAF5FF; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-soft);">
-                        <form action="admin_pedidos.php" method="POST" style="display: flex; gap: 10px; align-items: center;">
+                        <form action="<?= BASE_URL; ?>admin_pedidos.php" method="POST" style="display: flex; gap: 10px; align-items: center;">
                             <input type="hidden" name="acao" value="atualizar_status">
                             <input type="hidden" name="pedido_id" value="<?= $p_id; ?>">
                             
@@ -242,7 +257,7 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
 
         <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
-            <a href="admin.php">← Voltar ao Painel do Administrador</a>
+            <a href="<?= BASE_URL; ?>admin.php">← Voltar ao Painel do Administrador</a>
         </div>
 
     </section>

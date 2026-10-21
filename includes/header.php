@@ -3,6 +3,11 @@
 require_once __DIR__ . '/../config/db.php';
 iniciar_sessao();
 
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
+
 // Calcula a quantidade total de itens no carrinho
 $total_itens_carrinho = 0;
 if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
@@ -14,9 +19,10 @@ if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>A Toca de Leitura</title>
     <!-- Vincula a folha de estilos CSS -->
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="/projetointegrador_tocaleitura/css/style.css">
 </head>
 <body>
 
@@ -26,8 +32,8 @@ if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
             
             <!-- LOGO DA RAPOSINHA E SAUDAÇÃO -->
             <div class="logo-area">
-                <a href="index.php">
-                    <img src="../img_site/logo_toca.png" alt="Logo A Toca de Leitura" class="logo-site" onerror="this.onerror=null; this.src='../img_site/logo.png';">
+                <a href="<?= BASE_URL; ?>index.php">
+                    <img src="/projetointegrador_tocaleitura/img_site/logo_toca.png" alt="Logo A Toca de Leitura" class="logo-site" onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo.png';">
                     <div>
                         <h1>A Toca de Leitura 🍎</h1>
                         <?php if (isset($_SESSION['usuario_id'])): ?>
@@ -37,38 +43,38 @@ if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
                 </a>
             </div>
             
-            <!-- MENU DE NAVEGAÇÃO REORDENADO -->
+            <!-- MENU DE NAVEGAÇÃO COM ROTAS BASEADAS EM BASE_URL -->
             <nav>
                 <ul>
-                    <li><a href="index.php">Início</a></li>
-                    <li><a href="compras.php">Compras</a></li>
-                    <li><a href="procurar.php">Procure</a></li>
-                    <li><a href="resenhas.php">Resenhas</a></li>
+                    <li><a href="<?= BASE_URL; ?>index.php">Início</a></li>
+                    <li><a href="<?= BASE_URL; ?>compras.php">Compras</a></li>
+                    <li><a href="<?= BASE_URL; ?>procurar.php">Procure</a></li>
+                    <li><a href="<?= BASE_URL; ?>resenhas.php">Resenhas</a></li>
                     
                     <?php if (isset($_SESSION['usuario_id'])): ?>
-                        <li><a href="interagir.php">Interaja</a></li>
-                        <li><a href="estante.php">Minha Estante</a></li>
-                        <li><a href="atualizar_status.php">Status</a></li>
+                        <li><a href="<?= BASE_URL; ?>interagir.php">Interaja</a></li>
+                        <li><a href="<?= BASE_URL; ?>estante.php">Minha Estante</a></li>
+                        <li><a href="<?= BASE_URL; ?>atualizar_status.php">Status</a></li>
                     <?php endif; ?>
 
-                    <li><a href="contato.php">Contate-nos</a></li>
+                    <li><a href="<?= BASE_URL; ?>contato.php">Contate-nos</a></li>
                     
                     <li>
-                        <a href="carrinho.php">
-                            🛒 Carrinho (<?= $total_itens_carrinho; ?>)
+                        <a href="<?= BASE_URL; ?>carrinho.php">
+                             Carrinho (<?= $total_itens_carrinho; ?>)
                         </a>
                     </li>
 
                     <?php if (isset($_SESSION['usuario_id'])): ?>
                         <?php if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true): ?>
-                            <li><a href="admin.php" style="color: #FFC107;"> Admin</a></li>
+                            <li><a href="<?= BASE_URL; ?>admin.php" style="color: #FFC107;"> Admin</a></li>
                         <?php endif; ?>
 
-                        <li><a href="deletar_usuario.php" style="background: rgba(198, 40, 40, 0.4);">Deletar Conta</a></li>
-                        <li><a href="logout.php">Sair</a></li>
+                        <li><a href="<?= BASE_URL; ?>deletar_usuario.php" style="background: rgba(198, 40, 40, 0.4);">Deletar Conta</a></li>
+                        <li><a href="<?= BASE_URL; ?>logout.php">Sair</a></li>
                     <?php else: ?>
-                        <li><a href="cadastrar.php">Cadastre-se</a></li>
-                        <li><a href="login.php">Entrar</a></li>
+                        <li><a href="<?= BASE_URL; ?>cadastrar.php">Cadastre-se</a></li>
+                        <li><a href="<?= BASE_URL; ?>login.php">Entrar</a></li>
                     <?php endif; ?>
                 </ul>
             </nav>

@@ -1,5 +1,11 @@
+
 <?php
 require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Bloqueia acesso de usuários que não são administradores
 if (function_exists('verificar_admin')) {
@@ -7,7 +13,7 @@ if (function_exists('verificar_admin')) {
 } else {
     iniciar_sessao();
     if (empty($_SESSION['is_admin'])) {
-        header('Location: index.php');
+        header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
@@ -101,7 +107,7 @@ try {
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO (mundolivro3.jpg) -->
+<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
 <main class="page-admin-mensagens-bg">
 
     <section class="admin-mensagens-container">
@@ -131,7 +137,7 @@ require_once __DIR__ . '/../includes/header.php';
 
         <?php if (!$has_mensagens_table): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 16px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-size: 14px;">
-                <strong> Aviso:</strong> A tabela de mensagens (<code>mensagens_contato</code> ou <code>mensagens</code>) ainda não foi encontrada no seu banco de dados local.
+                 <strong>Aviso:</strong> A tabela de mensagens (<code>mensagens_contato</code> ou <code>mensagens</code>) ainda não foi encontrada no seu banco de dados local.
             </div>
         <?php endif; ?>
 
@@ -141,17 +147,28 @@ require_once __DIR__ . '/../includes/header.php';
                 $raw_data_envio = $msg['data_envio'] ?? $msg['criado_em'] ?? $msg['data'] ?? null;
                 $data_envio     = $raw_data_envio ? date('d/m/Y \à\s H:i', strtotime($raw_data_envio)) : 'Recente';
                 $ja_respondido  = !empty($msg['resposta_admin']);
-                $nome_leitor    = $msg['nome'] ?? $msg['nome_usuario'] ?? 'Visitante';
-                $email_leitor   = $msg['email'] ?? 'N/A';
-                $assunto        = $msg['assunto'] ?? 'Geral / Dúvida';
-                $conteudo_msg   = $msg['mensagem'] ?? $msg['conteudo'] ?? '';
+                
+                $nome_leitor_raw  = $msg['nome'] ?? $msg['nome_usuario'] ?? 'Visitante';
+                $nome_leitor      = mb_convert_encoding($nome_leitor_raw, 'UTF-8', 'ISO-8859-1');
+                
+                $email_leitor_raw = $msg['email'] ?? 'N/A';
+                $email_leitor     = mb_convert_encoding($email_leitor_raw, 'UTF-8', 'ISO-8859-1');
+                
+                $assunto_raw      = $msg['assunto'] ?? 'Geral / Dúvida';
+                $assunto          = mb_convert_encoding($assunto_raw, 'UTF-8', 'ISO-8859-1');
+                
+                $conteudo_msg_raw = $msg['mensagem'] ?? $msg['conteudo'] ?? '';
+                $conteudo_msg     = mb_convert_encoding($conteudo_msg_raw, 'UTF-8', 'ISO-8859-1');
+
+                $resposta_admin_raw = $msg['resposta_admin'] ?? '';
+                $resposta_admin     = mb_convert_encoding($resposta_admin_raw, 'UTF-8', 'ISO-8859-1');
             ?>
                 <div style="background-color: #FFFFFF; border: 1.5px solid <?= $ja_respondido ? '#86EFAC' : 'var(--border-soft)'; ?>; border-radius: var(--radius-card); padding: 22px; margin-bottom: 25px; box-shadow: var(--shadow-card); transition: all 0.2s ease;">
                     
                     <!-- CABEÇALHO DO CARD -->
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1.5px solid var(--border-soft); padding-bottom: 12px; margin-bottom: 15px;">
                         <div>
-                            <span style="font-size: 16px; font-weight: 800; color: var(--text-dark);">👤 <?= htmlspecialchars($nome_leitor); ?></span>
+                            <span style="font-size: 16px; font-weight: 800; color: var(--text-dark);"> <?= htmlspecialchars($nome_leitor); ?></span>
                             <span style="font-size: 13px; color: var(--text-muted); margin-left: 6px;">
                                 (&lt;<a href="mailto:<?= htmlspecialchars($email_leitor); ?>" style="color: var(--fox-purple); text-decoration: underline;"><?= htmlspecialchars($email_leitor); ?></a>&gt;)
                             </span>
@@ -164,7 +181,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;">🕒 <?= $data_envio; ?></span>
+                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;"> <?= $data_envio; ?></span>
                             
                             <?php if ($ja_respondido): ?>
                                 <span style="background-color: #DCFCE7; color: #15803D; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 11px; text-transform: uppercase;">
@@ -196,22 +213,22 @@ require_once __DIR__ . '/../includes/header.php';
                             <strong style="color: #15803D;">
                                  Resposta enviada pelo Admin (<?= !empty($msg['data_resposta']) ? date('d/m/Y \à\s H:i', strtotime($msg['data_resposta'])) : 'Enviada'; ?>):
                             </strong>
-                            <p style="margin: 6px 0 0 0; color: #166534; white-space: pre-wrap;"><?= htmlspecialchars($msg['resposta_admin']); ?></p>
+                            <p style="margin: 6px 0 0 0; color: #166534; white-space: pre-wrap;"><?= htmlspecialchars($resposta_admin); ?></p>
                         </div>
                     <?php endif; ?>
 
-                    <!-- FORMULÁRIO DE RESPOSTA EXPANSÍVEL & BOTOES -->
+                    <!-- FORMULÁRIO DE RESPOSTA EXPANSÍVEL & BOTAO EXCLUIR -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px; border-top: 1px dashed var(--border-soft); padding-top: 15px;">
                         <details style="flex: 1;" <?= !$ja_respondido ? 'open' : ''; ?>>
                             <summary style="cursor: pointer; color: var(--fox-purple); font-weight: 800; font-size: 13px; user-select: none;">
                                 <?= $ja_respondido ? ' Editar Resposta Enviada' : ' Escrever Resposta para este leitor'; ?>
                             </summary>
                             
-                            <form action="admin_mensagens.php" method="POST" style="margin-top: 12px;">
+                            <form action="<?= BASE_URL; ?>admin_mensagens.php" method="POST" style="margin-top: 12px;">
                                 <input type="hidden" name="acao" value="responder">
                                 <input type="hidden" name="mensagem_id" value="<?= $msg['id']; ?>">
                                 
-                                <textarea name="resposta_admin" rows="3" style="width: 100%; padding: 12px; border: 1.5px solid var(--border-soft); border-radius: var(--radius-input); box-sizing: border-box; font-family: inherit; font-size: 13px; background-color: #FAF5FF; color: var(--text-dark); margin-bottom: 10px;" placeholder="Digite aqui a solução ou resposta enviada ao usuário..." required><?= htmlspecialchars($msg['resposta_admin'] ?? ''); ?></textarea>
+                                <textarea name="resposta_admin" rows="3" style="width: 100%; padding: 12px; border: 1.5px solid var(--border-soft); border-radius: var(--radius-input); box-sizing: border-box; font-family: inherit; font-size: 13px; background-color: #FAF5FF; color: var(--text-dark); margin-bottom: 10px;" placeholder="Digite aqui a solução ou resposta enviada ao usuário..." required><?= htmlspecialchars($resposta_admin); ?></textarea>
                                 
                                 <button type="submit" class="btn-foxy" style="padding: 8px 18px; font-size: 13px;">
                                     <?= $ja_respondido ? ' Atualizar Resposta' : ' Enviar Resposta ao Leitor'; ?>
@@ -220,7 +237,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </details>
 
                         <!-- FORMULÁRIO DE EXCLUSÃO -->
-                        <form action="admin_mensagens.php" method="POST" onsubmit="return confirm('Deseja realmente apagar esta mensagem permanentemente?');" style="margin-left: 15px;">
+                        <form action="<?= BASE_URL; ?>admin_mensagens.php" method="POST" onsubmit="return confirm('Deseja realmente apagar esta mensagem permanentemente?');" style="margin-left: 15px;">
                             <input type="hidden" name="acao" value="excluir">
                             <input type="hidden" name="mensagem_id" value="<?= $msg['id']; ?>">
                             <button type="submit" style="background: none; border: none; color: var(--apple-red); font-size: 13px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
@@ -239,7 +256,7 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
 
         <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
-            <a href="admin.php">← Voltar ao Painel do Administrador</a>
+            <a href="<?= BASE_URL; ?>admin.php">← Voltar ao Painel do Administrador</a>
         </div>
 
     </section>
@@ -247,3 +264,4 @@ require_once __DIR__ . '/../includes/header.php';
 </main>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

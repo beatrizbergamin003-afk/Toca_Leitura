@@ -1,5 +1,11 @@
+
 <?php
 require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Bloqueia acesso de usuários que não são administradores
 if (function_exists('verificar_admin')) {
@@ -7,7 +13,7 @@ if (function_exists('verificar_admin')) {
 } else {
     iniciar_sessao();
     if (empty($_SESSION['is_admin'])) {
-        header('Location: index.php');
+        header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
@@ -72,7 +78,7 @@ try {
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO (mundolivro3.jpg) -->
+<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
 <main class="page-admin-usuarios-bg">
 
     <section class="admin-usuarios-container">
@@ -118,19 +124,26 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php foreach ($usuarios as $u): 
                             $is_user_admin  = !empty($u['is_admin']);
                             $is_self        = ((int)$u['id'] === $admin_atual_id);
+                            
+                            $nome_user_raw  = $u['nome'] ?? '';
+                            $nome_user      = mb_convert_encoding($nome_user_raw, 'UTF-8', 'ISO-8859-1');
+
+                            $email_user_raw = $u['email'] ?? '';
+                            $email_user     = mb_convert_encoding($email_user_raw, 'UTF-8', 'ISO-8859-1');
+
                             $raw_date       = $u['criado_em'] ?? null;
                             $data_cadastro  = $raw_date ? date('d/m/Y \à\s H:i', strtotime($raw_date)) : 'Recente';
                         ?>
                             <tr style="border-bottom: 1px solid var(--border-soft); font-size: 13px;">
                                 <td style="padding: 10px 12px; font-weight: 800; color: var(--text-muted);">#<?= $u['id']; ?></td>
                                 <td style="padding: 10px 12px; font-weight: 800; color: var(--text-dark);">
-                                     <?= htmlspecialchars($u['nome']); ?>
+                                     <?= htmlspecialchars($nome_user); ?>
                                     <?php if ($is_self): ?>
                                         <span style="font-size: 11px; color: var(--fox-purple); font-weight: 800; margin-left: 4px;">(Você)</span>
                                     <?php endif; ?>
                                 </td>
                                 <td style="padding: 10px 12px; color: var(--text-dark);">
-                                    <?= htmlspecialchars($u['email']); ?>
+                                    <?= htmlspecialchars($email_user); ?>
                                 </td>
                                 <td style="padding: 10px 12px;">
                                     <?php if ($is_user_admin): ?>
@@ -151,16 +164,16 @@ require_once __DIR__ . '/../includes/header.php';
                                         
                                         <?php if (!$is_self): ?>
                                             <!-- FORMULÁRIO MUDAR CARGO (ADMIN / LEITOR) -->
-                                            <form action="admin_usuarios.php" method="POST" style="display: inline;">
+                                            <form action="<?= BASE_URL; ?>admin_usuarios.php" method="POST" style="display: inline;">
                                                 <input type="hidden" name="acao" value="toggle_admin">
                                                 <input type="hidden" name="usuario_id" value="<?= $u['id']; ?>">
                                                 <button type="submit" style="background: none; border: none; color: var(--fox-purple); font-size: 12px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
-                                                    <?= $is_user_admin ? '⬇ Tornar Leitor' : ' Tornar Admin'; ?>
+                                                    <?= $is_user_admin ? ' Tornar Leitor' : ' Tornar Admin'; ?>
                                                 </button>
                                             </form>
 
                                             <!-- FORMULÁRIO EXCLUIR USUÁRIO -->
-                                            <form action="admin_usuarios.php" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir permanentemente este usuário?');">
+                                            <form action="<?= BASE_URL; ?>admin_usuarios.php" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir permanentemente este usuário?');">
                                                 <input type="hidden" name="acao" value="deletar">
                                                 <input type="hidden" name="usuario_id" value="<?= $u['id']; ?>">
                                                 <button type="submit" style="background: none; border: none; color: var(--apple-red); font-size: 12px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
@@ -185,7 +198,7 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
 
         <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
-            <a href="admin.php">← Voltar ao Painel do Administrador</a>
+            <a href="<?= BASE_URL; ?>admin.php">← Voltar ao Painel do Administrador</a>
         </div>
 
     </section>
@@ -193,3 +206,4 @@ require_once __DIR__ . '/../includes/header.php';
 </main>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

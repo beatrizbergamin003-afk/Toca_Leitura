@@ -1,13 +1,18 @@
 
-<?php
+<?php 
 require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 if (function_exists('verificar_admin')) {
     verificar_admin();
 } else {
     iniciar_sessao();
     if (empty($_SESSION['is_admin'])) {
-        header('Location: index.php');
+        header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
@@ -61,7 +66,7 @@ $livros = $stmt->fetchAll();
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO (mundolivro3.jpg) -->
+<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
 <main class="page-admin-livros-bg">
 
     <section class="admin-livros-container">
@@ -69,7 +74,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- CABEÇALHO DA PÁGINA -->
         <div style="margin-bottom: 25px;">
             <h2 style="font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
-                 Gerenciamento do Catálogo de Livros
+                Gerenciamento do Catálogo de Livros
             </h2>
             <p style="color: var(--text-muted); font-size: 14px;">
                 Adicione, edite ou remova obras da Toca de Leitura.
@@ -79,23 +84,23 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- MENSAGENS DE FEEDBACK VISUAL -->
         <?php if (!empty($mensagem)): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                 <?= htmlspecialchars($mensagem); ?>
+                <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
         <?php if (!empty($erro)): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                 <?= htmlspecialchars($erro); ?>
+                <?= htmlspecialchars($erro); ?>
             </div>
         <?php endif; ?>
 
         <!-- FORMULÁRIO DE CADASTRO DE NOVO LIVRO -->
         <div style="background-color: #FAF5FF; border: 1.5px solid var(--border-soft); border-radius: var(--radius-card); padding: 25px; margin-bottom: 30px;">
             <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 18px;">
-                 Cadastrar Novo Livro
+                Cadastrar Novo Livro
             </h3>
             
-            <form action="admin_livros.php" method="POST">
+            <form action="<?= BASE_URL; ?>admin_livros.php" method="POST">
                 <input type="hidden" name="acao" value="cadastrar">
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
@@ -140,14 +145,14 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <button type="submit" class="btn-foxy" style="padding: 10px 24px;">
-                     Cadastrar Livro
+                    Cadastrar Livro
                 </button>
             </form>
         </div>
 
         <!-- TABELA DE LIVROS CADASTRADOS -->
         <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 15px;">
-             Livros no Banco de Dados (<?= count($livros); ?>)
+            Livros no Banco de Dados (<?= count($livros); ?>)
         </h3>
 
         <?php if (!empty($livros)): ?>
@@ -171,25 +176,31 @@ require_once __DIR__ . '/../includes/header.php';
                                 $capa = $livro['capa_url'] ?? '';
                                 $src_imagem = (str_starts_with($capa, 'http://') || str_starts_with($capa, 'https://')) 
                                     ? $capa 
-                                    : "../img_site/" . ($capa ?: 'padrao.jpg');
+                                    : "/projetointegrador_tocaleitura/img_site/" . ($capa ?: 'padrao.jpg');
                                 $estrelas_num = (float)($livro['estrelas'] ?? 5);
                             ?>
                             <tr style="border-bottom: 1px solid var(--border-soft); font-size: 14px;">
                                 <td style="padding: 10px; text-align: center;">
-                                    <img src="<?= htmlspecialchars($src_imagem); ?>" alt="Capa" style="width: 45px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-soft);">
+                                    <img src="<?= htmlspecialchars($src_imagem); ?>" alt="Capa" style="width: 45px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-soft);" onerror="this.src='/projetointegrador_tocaleitura/img_site/livros_index.webp';">
                                 </td>
                                 <td style="padding: 10px; font-weight: 800; color: var(--text-muted);">#<?= $livro['id']; ?></td>
-                                <td style="padding: 10px; font-weight: 800; color: var(--text-dark);"><?= htmlspecialchars($livro['titulo']); ?></td>
-                                <td style="padding: 10px; color: var(--text-dark);"><?= htmlspecialchars($livro['autor'] ?? 'N/I'); ?></td>
-                                <td style="padding: 10px; color: var(--text-dark);"><?= htmlspecialchars($livro['genero'] ?? 'N/I'); ?></td>
+                                <td style="padding: 10px; font-weight: 800; color: var(--text-dark);">
+                                    <?= htmlspecialchars($livro['titulo'] ?? ''); ?>
+                                </td>
+                                <td style="padding: 10px; color: var(--text-dark);">
+                                    <?= htmlspecialchars($livro['autor'] ?? 'N/I'); ?>
+                                </td>
+                                <td style="padding: 10px; color: var(--text-dark);">
+                                    <?= htmlspecialchars($livro['genero'] ?? ''); ?>
+                                </td>
                                 <td style="padding: 10px; font-weight: 800; color: #7C3AED;">R$ <?= number_format((float)($livro['preco'] ?? 0), 2, ',', '.'); ?></td>
-                                <td style="padding: 10px; font-weight: 800; color: #B45309;"><?= number_format($estrelas_num, 1, ',', '.'); ?> ⭐</td>
+                                <td style="padding: 10px; font-weight: 800; color: #B45309;"><?= number_format($estrelas_num, 1, ',', '.'); ?></td>
                                 <td style="padding: 10px; text-align: center;">
-                                    <form action="admin_livros.php" method="POST" onsubmit="return confirm('Tem certeza que deseja remover este livro do catálogo?');" style="display: inline;">
+                                    <form action="<?= BASE_URL; ?>admin_livros.php" method="POST" onsubmit="return confirm('Tem certeza que deseja remover este livro do catálogo?');" style="display: inline;">
                                         <input type="hidden" name="acao" value="excluir">
                                         <input type="hidden" name="livro_id" value="<?= $livro['id']; ?>">
                                         <button type="submit" style="background: none; border: none; color: var(--apple-red); font-size: 13px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
-                                             Excluir
+                                            Excluir
                                         </button>
                                     </form>
                                 </td>
@@ -205,7 +216,7 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
 
         <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
-            <a href="admin.php">← Voltar ao Painel do Administrador</a>
+            <a href="<?= BASE_URL; ?>admin.php">&larr; Voltar ao Painel do Administrador</a>
         </div>
 
     </section>

@@ -1,7 +1,19 @@
+
 <?php
 // ============================================================
 // CONFIGURAÇÃO DE CONEXÃO COM O BANCO DE DADOS E FUNÇÕES GLOBAIS
 // ============================================================
+
+// Força o PHP e o Servidor Web a responderem estritamente em UTF-8
+ini_set('default_charset', 'UTF-8');
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=utf-8');
+}
+
+// Definição da URL base do projeto
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Parâmetros de conexão com o banco PostgreSQL
 $host     = "localhost";
@@ -16,15 +28,14 @@ try {
 
     // Instancia a conexão PDO configurada para tratamento de erros e fetch associativo
     $pdo = new PDO($dsn, $user, $password, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Levanta exceções em falhas SQL
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC        // Retorna dados como array associativo
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
 
-    // Garante a codificação UTF-8 na sessão do banco
+    // Garante a codificação UTF-8 na sessão do banco PostgreSQL
     $pdo->exec("SET client_encoding TO 'UTF8'");
 
 } catch (PDOException $e) {
-    // Interrompe a execução exibindo a mensagem em caso de falha de conexão
     die("Erro na conexão com o PostgreSQL: " . $e->getMessage());
 }
 
@@ -43,7 +54,7 @@ function iniciar_sessao() {
 function verificar_autenticacao() {
     iniciar_sessao();
     if (!isset($_SESSION['usuario_id'])) {
-        header("Location: login.php?erro=restrito");
+        header("Location: " . BASE_URL . "login.php?erro=restrito");
         exit;
     }
 }
@@ -53,11 +64,22 @@ function verificar_autenticacao() {
  */
 function verificar_admin() {
     iniciar_sessao();
-    
-    // Se não estiver logado OU não for admin, redireciona
     if (!isset($_SESSION['usuario_id']) || empty($_SESSION['is_admin'])) {
-        header("Location: index.php?erro=acesso_negado");
+        header("Location: " . BASE_URL . "index.php?erro=acesso_negado");
         exit;
     }
 }
+
+/**
+ * Corrige automaticamente textos que estejam a sofrer dupla conversão UTF-8.
+ * Compatível com PHP 8.2+
+ */
+function fix_utf8($texto) {
+    if (empty($texto)) return '';
+    if (strpos($texto, 'Ã') !== false) {
+        return mb_convert_encoding($texto, 'ISO-8859-1', 'UTF-8');
+    }
+    return $texto;
+}
 ?>
+

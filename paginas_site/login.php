@@ -1,5 +1,12 @@
+
 <?php
 require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
+
 iniciar_sessao();
 
 $erro = '';
@@ -20,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Verificação de senha
         if ($usuario && password_verify($senha, $usuario['senha'])) {
             $_SESSION['usuario_id']   = $usuario['id'];
-            $_SESSION['usuario_nome'] = $usuario['nome'];
+            $_SESSION['usuario_nome'] = mb_convert_encoding($usuario['nome'] ?? 'Leitor', 'UTF-8', 'ISO-8859-1');
             $_SESSION['is_admin']     = (bool)$usuario['is_admin'];
 
             // Tenta registrar nos logs
@@ -31,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Silencia se a tabela logs_acesso não existir
             }
 
-            header('Location: index.php');
+            header('Location: ' . BASE_URL . 'index.php');
             exit;
         } else {
             $erro = "E-mail ou senha incorretos.";
@@ -53,17 +60,17 @@ require_once __DIR__ . '/../includes/header.php';
 <main class="page-login-bg">
     <section class="login-container">
         <div class="cadastro-header">
-            <h2>Entrar na Conta</h2>
+            <h2> Entrar na Conta</h2>
             <p>Bem-vindo de volta à Toca de Leitura</p>
         </div>
 
         <?php if (!empty($erro)): ?>
             <div style="background-color: #FFEBEE; color: #C62828; padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 700; text-align: center;">
-                <?= htmlspecialchars($erro); ?>
+                 <?= htmlspecialchars($erro); ?>
             </div>
         <?php endif; ?>
 
-        <form action="login.php" method="POST">
+        <form action="<?= BASE_URL; ?>login.php" method="POST">
             <div class="form-group">
                 <label for="email">E-mail:</label>
                 <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" value="<?= htmlspecialchars($email ?? ''); ?>" required>
@@ -78,7 +85,7 @@ require_once __DIR__ . '/../includes/header.php';
         </form>
 
         <div class="cadastro-footer">
-            Ainda não tem conta? <a href="cadastrar.php">Cadastre-se aqui</a>
+            Ainda não tem conta? <a href="<?= BASE_URL; ?>cadastrar.php">Cadastre-se aqui</a>
         </div>
     </section>
 </main>

@@ -1,5 +1,11 @@
+
 <?php 
-require_once '../config/db.php';
+require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Restringe a página apenas para leitores conectados
 if (function_exists('verificar_autenticacao')) {
@@ -7,15 +13,16 @@ if (function_exists('verificar_autenticacao')) {
 } else {
     iniciar_sessao();
     if (empty($_SESSION['usuario_id'])) {
-        header('Location: login.php');
+        header('Location: ' . BASE_URL . 'login.php');
         exit;
     }
 }
 
 $usuario_id   = $_SESSION['usuario_id'];
 $usuario_nome = $_SESSION['usuario_nome'] ?? 'Leitor';
-$mensagem     = '';
-$sucesso      = false;
+
+$mensagem = '';
+$sucesso  = false;
 
 // Processamento do status e cálculo de progresso
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -74,15 +81,16 @@ $stmt_atual = $pdo->prepare("SELECT * FROM historico_leitura WHERE usuario_id = 
 $stmt_atual->execute([$usuario_id]);
 $status = $stmt_atual->fetch();
 
-// Atribui valores do banco ou padrões zerados
-$livro_atual         = $status['livro_nome'] ?? '';
-$genero_atual        = $status['genero'] ?? '';
-$tempo_atual         = $status['tempo_leitura'] ?? '';
+// Atribui valores diretos sem dupla conversão de codificação
+$livro_atual  = $status['livro_nome'] ?? '';
+$genero_atual = $status['genero'] ?? '';
+$tempo_atual  = $status['tempo_leitura'] ?? '';
+
 $paginas_lidas_atual = (int)($status['paginas_lidas'] ?? 0);
 $total_paginas_atual = (int)($status['total_paginas'] ?? 0);
 $progresso_pct_atual = (int)($status['progresso_pct'] ?? 0);
 
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
@@ -92,14 +100,14 @@ require_once '../includes/header.php';
         
         <!-- CABEÇALHO -->
         <div class="status-header">
-            <h2> Atualizar Status e Progresso de Leitura</h2>
+            <h2>Atualizar Status e Progresso de Leitura</h2>
             <p>Informe quantas páginas você já leu e acompanhe a sua evolução literária!</p>
         </div>
 
         <!-- MENSAGENS DE FEEDBACK VISUAL -->
         <?php if (!empty($mensagem)): ?>
             <div style="background-color: <?= $sucesso ? '#DCFCE7' : '#FEF3C7'; ?>; color: <?= $sucesso ? '#15803D' : '#B45309'; ?>; padding: 12px 18px; border-radius: 12px; border: 1px solid <?= $sucesso ? '#86EFAC' : '#FCD34D'; ?>; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                <?= $sucesso ? ' ' : ' '; ?><?= htmlspecialchars($mensagem); ?>
+                <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
@@ -107,12 +115,12 @@ require_once '../includes/header.php';
         <?php if ($total_paginas_atual > 0): ?>     
             <div class="status-progresso-box">
                 <h3 style="font-size: 16px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
-                     <?= htmlspecialchars($livro_atual); ?>
+                    <?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($livro_atual) : $livro_atual); ?>
                 </h3>
                 <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
-                    Gênero: <strong><?= htmlspecialchars($genero_atual ?: 'Geral'); ?></strong>
+                    Gênero: <strong><?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($genero_atual) : $genero_atual); ?></strong>
                     <?php if (!empty($tempo_atual)): ?>
-                        | Meta: <strong><?= htmlspecialchars($tempo_atual); ?></strong>
+                        | Meta: <strong><?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($tempo_atual) : $tempo_atual); ?></strong>
                     <?php endif; ?>
                 </p>
                 <p style="font-size: 13px; color: var(--text-dark); margin-bottom: 10px;">
@@ -133,20 +141,20 @@ require_once '../includes/header.php';
         <?php endif; ?>
 
         <!-- FORMULÁRIO DE ENTRADA DE LEITURA -->
-        <form action="atualizar_status.php" method="POST">
+        <form action="<?= BASE_URL; ?>atualizar_status.php" method="POST">
             <div class="form-group">
                 <label for="livro">Livro que está lendo:</label>
-                <input type="text" id="livro" name="livro" value="<?= htmlspecialchars($livro_atual); ?>" placeholder="Ex: Corte de Espinhos e Rosas" required>
+                <input type="text" id="livro" name="livro" value="<?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($livro_atual) : $livro_atual); ?>" placeholder="Ex: Corte de Espinhos e Rosas" required>
             </div>
 
             <div class="form-group">
                 <label for="genero">Gênero Literário:</label>
-                <input type="text" id="genero" name="genero" value="<?= htmlspecialchars($genero_atual); ?>" placeholder="Ex: Fantasia, Romance, Suspense..." required>
+                <input type="text" id="genero" name="genero" value="<?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($genero_atual) : $genero_atual); ?>" placeholder="Ex: Fantasia, Romance, Suspense..." required>
             </div>
 
             <div class="form-group">
                 <label for="tempo">Tempo dedicado à Leitura (opcional):</label>
-                <input type="text" id="tempo" name="tempo" placeholder="Ex: 15 dias, 10 páginas por dia" value="<?= htmlspecialchars($tempo_atual); ?>">
+                <input type="text" id="tempo" name="tempo" placeholder="Ex: 15 dias, 10 páginas por dia" value="<?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($tempo_atual) : $tempo_atual); ?>">
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px;">
@@ -173,11 +181,12 @@ require_once '../includes/header.php';
         </form>
 
         <div class="cadastro-footer">
-            <a href="estante.php">← Voltar para Minha Estante</a>
+            <a href="<?= BASE_URL; ?>estante.php">&larr; Voltar para Minha Estante</a>
         </div>
 
     </section>
 
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

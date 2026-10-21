@@ -1,6 +1,12 @@
 
 <?php
 require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
+
 iniciar_sessao();
 
 $mensagem_sucesso = '';
@@ -23,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?, ?, 'Pendente')
             ");
             if ($stmt->execute([$user_id, $nome, $email, $assunto, $mensagem])) {
-                $mensagem_sucesso = " Sua mensagem foi enviada com sucesso! Responderemos em breve. ";
+                $mensagem_sucesso = "Sua mensagem foi enviada com sucesso! Responderemos em breve. ✨";
             } else {
                 $erro = "Erro ao enviar a mensagem. Tente novamente.";
             }
@@ -57,27 +63,27 @@ if (isset($_SESSION['usuario_id']) || isset($_SESSION['usuario_email'])) {
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- Injeta a imagem download.jpg no plano de fundo exclusivo da página de contato -->
+<!-- Injeta a imagem prateleira.jpg no plano de fundo exclusivo da página de contato -->
 <style>
     body {
-        background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+        background: url('/projetointegrador_tocaleitura/img_site/prateleira.jpg') no-repeat center center fixed !important;
         background-size: cover !important;
     }
 </style>
 
 <main class="main-container">
 
-    <!-- CABEÇALHO DA PÁGINA (COM SOMBRA NO TEXTO PARA LEITURA PERFEITA) -->
+    <!-- CABEÇALHO DA PÁGINA -->
     <div style="text-align: center; margin-bottom: 25px;">
         <h2 style="font-size: 28px; font-weight: 800; color: #FFFFFF; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);">
              Fale Conosco - A Toca de Leitura
         </h2>
         <p style="color: #FFFDE7; font-size: 15px; font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);">
-            Tem alguma dúvida, crítica ou sugestão? Envie uma mensagem para a nossa equipe! 
+            Tem alguma dúvida, crítica ou sugestão? Envie uma mensagem para a nossa equipe!
         </p>
     </div>
 
-    <!-- CARTÃO DO FORMULÁRIO COM EFEITO FOSCO (VIDRO) E BORDA LARANJA -->
+    <!-- CARTÃO DO FORMULÁRIO COM EFEITO FOSCO (VIDRO) E BORDA DESTACADA -->
     <section class="card-box" style="background-color: rgba(255, 255, 255, 0.92) !important; backdrop-filter: blur(8px); border: 2.5px solid var(--bg-header) !important; border-radius: 22px; max-width: 680px; margin: 0 auto 35px auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); padding: 32px;">
         
         <?php if ($mensagem_sucesso): ?>
@@ -92,7 +98,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         <?php endif; ?>
 
-        <form action="contato.php" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
+        <form action="<?= BASE_URL; ?>contato.php" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
             <div>
                 <label for="nome" style="font-weight: 700; color: var(--text-dark);">Seu Nome *</label>
                 <input type="text" id="nome" name="nome" placeholder="Digite seu nome completo" value="<?= htmlspecialchars($_SESSION['usuario_nome'] ?? ''); ?>" required style="margin-top: 5px;">
@@ -141,11 +147,15 @@ require_once __DIR__ . '/../includes/header.php';
                                 : (!empty($msg['criado_em']) ? date('d/m/Y H:i', strtotime($msg['criado_em'])) : 'Recente');
                             
                             $tem_resposta = !empty($msg['resposta_admin']);
+
+                            $assunto_utf8  = mb_convert_encoding($msg['assunto'] ?? 'Geral / Dúvida', 'UTF-8', 'ISO-8859-1');
+                            $mensagem_utf8 = mb_convert_encoding($msg['mensagem'] ?? '', 'UTF-8', 'ISO-8859-1');
+                            $resposta_utf8 = mb_convert_encoding($msg['resposta_admin'] ?? '', 'UTF-8', 'ISO-8859-1');
                         ?>
                         <article class="card-box" style="background-color: rgba(255, 255, 255, 0.94) !important; backdrop-filter: blur(8px); border-radius: 18px; border: 1.5px solid <?= $tem_resposta ? '#2E7D32' : 'var(--border-soft)'; ?>; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
                             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-soft); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                                 <strong style="color: var(--text-dark); font-size: 15px;">
-                                     Assunto: <?= htmlspecialchars($msg['assunto'] ?? 'Geral / Dúvida'); ?>
+                                     Assunto: <?= htmlspecialchars($assunto_utf8); ?>
                                 </strong>
                                 <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
                                      <?= $data_envio; ?>
@@ -153,7 +163,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
 
                             <p style="font-size: 14px; color: var(--text-dark); margin-bottom: 12px; line-height: 1.5;">
-                                <strong>Sua Mensagem:</strong> <?= htmlspecialchars($msg['mensagem']); ?>
+                                <strong>Sua Mensagem:</strong> <?= htmlspecialchars($mensagem_utf8); ?>
                             </p>
 
                             <!-- EXIBIÇÃO DA RESPOSTA DO ADMIN OU BADGE DE AGUARDANDO -->
@@ -162,7 +172,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <strong style="color: #2E7D32; font-size: 13px;">
                                          Resposta da Administração (<?= !empty($msg['data_resposta']) ? date('d/m/Y H:i', strtotime($msg['data_resposta'])) : 'Atendida'; ?>):
                                     </strong>
-                                    <p style="margin-top: 6px; color: #1B5E20; font-size: 14px; white-space: pre-wrap; line-height: 1.5;"><?= htmlspecialchars($msg['resposta_admin']); ?></p>
+                                    <p style="margin-top: 6px; color: #1B5E20; font-size: 14px; white-space: pre-wrap; line-height: 1.5;"><?= htmlspecialchars($resposta_utf8); ?></p>
                                 </div>
                             <?php else: ?>
                                 <div style="background-color: #FFF3E0; color: #E65100; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">

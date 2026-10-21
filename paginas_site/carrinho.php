@@ -1,7 +1,12 @@
 
-<?php
-require_once '../config/db.php';
+<?php 
+require_once __DIR__ . '/../config/db.php';
 iniciar_sessao();
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Inicializa o carrinho se não existir
 if (!isset($_SESSION['carrinho']) || !is_array($_SESSION['carrinho'])) {
@@ -28,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         $_SESSION['carrinho'] = [];
     }
 
-    header("Location: carrinho.php");
+    header("Location: " . BASE_URL . "carrinho.php");
     exit;
 }
 
@@ -58,14 +63,14 @@ if (!empty($ids_carrinho)) {
             if (!empty($capa)) {
                 $src_imagem = (str_starts_with($capa, 'http://') || str_starts_with($capa, 'https://')) 
                     ? $capa 
-                    : "../img_site/" . $capa;
+                    : "/projetointegrador_tocaleitura/img_site/" . $capa;
             } else {
-                $src_imagem = '../img_site/logo_toca.png';
+                $src_imagem = '/projetointegrador_tocaleitura/img_site/logo_toca.png';
             }
 
             $livros_carrinho[] = [
                 'id'         => $id,
-                'titulo'     => $livro['titulo'],
+                'titulo'     => $livro['titulo'] ?? '',
                 'autor'      => $livro['autor'] ?? 'Não informado',
                 'preco'      => $preco,
                 'quantidade' => $qtd,
@@ -78,13 +83,13 @@ if (!empty($ids_carrinho)) {
     }
 }
 
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <!-- Injeta a imagem prateleira.jpg no plano de fundo do carrinho -->
 <style>
     body {
-        background: url('../img_site/prateleira.jpg') no-repeat center center fixed !important;
+        background: url('/projetointegrador_tocaleitura/img_site/prateleira.jpg') no-repeat center center fixed !important;
         background-size: cover !important;
     }
 </style>
@@ -97,7 +102,7 @@ require_once '../includes/header.php';
              Seu Carrinho de Compras
         </h2>
         <p style="color: #FFFDE7; font-size: 15px; font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);">
-            Revise seus itens escolhidos antes de fechar o pedido 
+            Revise seus itens escolhidos antes de fechar o pedido
         </p>
     </div>
 
@@ -112,11 +117,11 @@ require_once '../includes/header.php';
 
         <!-- AÇÕES DO TOPO COM ESTILO ROXO MÁGICO -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-            <a href="compras.php" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; text-decoration: none;">
+            <a href="<?= BASE_URL; ?>compras.php" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; text-decoration: none;">
                 ← Continuar Comprando
             </a>
 
-            <form action="carrinho.php" method="POST" onsubmit="return confirm('Tem certeza que deseja esvaziar todo o carrinho?');">
+            <form action="<?= BASE_URL; ?>carrinho.php" method="POST" onsubmit="return confirm('Tem certeza que deseja esvaziar todo o carrinho?');">
                 <input type="hidden" name="acao" value="limpar">
                 <button type="submit" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; cursor: pointer;">
                      Esvaziar Carrinho
@@ -144,7 +149,7 @@ require_once '../includes/header.php';
                             <td class="col-capa">
                                 <img src="<?= htmlspecialchars($item['imagem']); ?>" 
                                      alt="<?= htmlspecialchars($item['titulo']); ?>"
-                                     onerror="this.onerror=null; this.src='../img_site/logo_toca.png';">
+                                     onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo_toca.png';">
                             </td>
 
                             <!-- 2. TÍTULO E AUTOR -->
@@ -164,7 +169,7 @@ require_once '../includes/header.php';
 
                             <!-- 4. QUANTIDADE COM FORMULÁRIO RÁPIDO -->
                             <td>
-                                <form action="carrinho.php" method="POST" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <form action="<?= BASE_URL; ?>carrinho.php" method="POST" style="display: inline-flex; align-items: center; gap: 6px;">
                                     <input type="hidden" name="acao" value="atualizar">
                                     <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
                                     <input type="number" name="quantidade" value="<?= $item['quantidade']; ?>" min="1" max="99" 
@@ -182,7 +187,7 @@ require_once '../includes/header.php';
 
                             <!-- 6. REMOVER ITEM -->
                             <td>
-                                <form action="carrinho.php" method="POST" style="display: inline;">
+                                <form action="<?= BASE_URL; ?>carrinho.php" method="POST" style="display: inline;">
                                     <input type="hidden" name="acao" value="remover">
                                     <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
                                     <button type="submit" class="btn-foxy" 
@@ -215,13 +220,13 @@ require_once '../includes/header.php';
 
                 <?php if (isset($_SESSION['usuario_id']) || isset($_SESSION['id'])): ?>
                     <!-- FORMULÁRIO POST PARA FINALIZAR A COMPRA -->
-                    <form action="finalizar_compra.php" method="POST" style="width: 100%;">
+                    <form action="<?= BASE_URL; ?>finalizar_compra.php" method="POST" style="width: 100%;">
                         <button type="submit" class="btn-foxy" style="padding: 12px 28px; font-size: 15px; width: 100%; box-sizing: border-box; cursor: pointer;">
                              Finalizar Pedido
                         </button>
                     </form>
                 <?php else: ?>
-                    <a href="login.php" class="btn-foxy" style="padding: 12px 28px; font-size: 14px; width: 100%; box-sizing: border-box; display: block; text-align: center; text-decoration: none;">
+                    <a href="<?= BASE_URL; ?>login.php" class="btn-foxy" style="padding: 12px 28px; font-size: 14px; width: 100%; box-sizing: border-box; display: block; text-align: center; text-decoration: none;">
                          Faça Login para Finalizar
                     </a>
                 <?php endif; ?>
@@ -232,7 +237,7 @@ require_once '../includes/header.php';
 
         <!-- ESTADO QUANDO O CARRINHO ESTÁ VAZIO -->
         <div class="card-box" style="text-align: center; padding: 50px 20px; max-width: 550px; margin: 40px auto; border-radius: 22px; background-color: rgba(255, 255, 255, 0.92) !important; backdrop-filter: blur(8px); border: 2px solid var(--border-soft);">
-            <img src="../img_site/logo_toca.png" alt="A Toca de Leitura" style="width: 110px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));" onerror="this.onerror=null; this.src='../img_site/logo.png';">
+            <img src="/projetointegrador_tocaleitura/img_site/logo_toca.png" alt="A Toca de Leitura" style="width: 110px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));" onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo.png';">
             
             <h3 style="font-size: 22px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px;">
                 Seu carrinho está vazio!
@@ -240,7 +245,7 @@ require_once '../includes/header.php';
             <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.6;">
                 Parece que você ainda não adicionou nenhum livro à sua toca. Explore nosso acervo e encontre sua próxima leitura!
             </p>
-            <a href="compras.php" class="btn-foxy" style="padding: 11px 28px; font-size: 14px; text-decoration: none;">
+            <a href="<?= BASE_URL; ?>compras.php" class="btn-foxy" style="padding: 11px 28px; font-size: 14px; text-decoration: none;">
                  Ir para a Loja de Livros
             </a>
         </div>
@@ -249,5 +254,5 @@ require_once '../includes/header.php';
 
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
 

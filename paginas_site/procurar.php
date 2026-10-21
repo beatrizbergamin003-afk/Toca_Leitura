@@ -1,5 +1,11 @@
+
 <?php 
-require_once '../config/db.php';
+require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Captura a busca enviada via GET
 $busca = trim($_GET['busca'] ?? '');
@@ -22,7 +28,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $livros = $stmt->fetchAll();
 
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <main class="main-container">
@@ -30,16 +36,16 @@ require_once '../includes/header.php';
     <!-- CABEÇALHO DA PÁGINA -->
     <div style="margin-bottom: 25px; text-align: center;">
         <h2 style="font-size: 26px; font-weight: 800; color: var(--text-dark);"> Procure sua Próxima Leitura</h2>
-        <p style="color: var(--text-muted); font-size: 14px;">Encontre os melhores títulos ou descubra as tendências da comunidade </p>
+        <p style="color: var(--text-muted); font-size: 14px;">Encontre os melhores títulos ou descubra as tendências da comunidade</p>
     </div>
 
     <!-- CAMPO DE BUSCA ESTILIZADO -->
     <section class="filtro-container">
-        <form action="procurar.php" method="GET" class="filtro-form">
+        <form action="<?= BASE_URL; ?>procurar.php" method="GET" class="filtro-form">
             <input type="text" name="busca" placeholder=" Digite o título, autor ou editora..." value="<?= htmlspecialchars($busca); ?>">
             <button type="submit" class="btn-foxy">Procurar</button>
             <?php if (!empty($busca)): ?>
-                <a href="procurar.php" class="btn-foxy" style="background-color: var(--apple-red) !important;">Ver Mais Lidos</a>
+                <a href="<?= BASE_URL; ?>procurar.php" class="btn-foxy" style="background-color: var(--apple-red) !important;">Ver Mais Lidos</a>
             <?php endif; ?>
         </form>
     </section>
@@ -51,7 +57,7 @@ require_once '../includes/header.php';
         </h3>
     </div>
 
-    <!-- TABELA ARREDONDADA E COM RESPRIRO (IGUAL À PÁGINA DE COMPRAS) -->
+    <!-- TABELA ARREDONDADA E COM RESPIRO (IGUAL À PÁGINA DE COMPRAS) -->
     <?php if (count($livros) > 0): ?>
         <div class="tabela-container-compras">
             <table class="tabela-compras">
@@ -73,36 +79,40 @@ require_once '../includes/header.php';
                             if (!empty($capa)) {
                                 $src_imagem = (str_starts_with($capa, 'http://') || str_starts_with($capa, 'https://')) 
                                     ? $capa 
-                                    : "../img_site/" . $capa;
+                                    : "/projetointegrador_tocaleitura/img_site/" . $capa;
                             } else {
-                                $src_imagem = '../img_site/logo.png';
+                                $src_imagem = '/projetointegrador_tocaleitura/img_site/logo.png';
                             }
 
                             // Formatação das Estrelas
                             $estrelas_num = (int)round((float)($livro['estrelas'] ?? 5));
                             $estrelas_str = str_repeat('★', min(5, max(0, $estrelas_num))) . str_repeat('☆', max(0, 5 - $estrelas_num));
+
+                            $titulo_utf8  = $livro['titulo'] ?? '';
+                            $autor_utf8   = $livro['autor'] ?? 'Não informado';
+                            $editora_utf8 = $livro['editora'] ?? 'Não informada';
                         ?>
                         <tr>
                             <!-- 1. CAPA -->
                             <td class="col-capa">
                                 <img src="<?= htmlspecialchars($src_imagem); ?>" 
-                                     alt="<?= htmlspecialchars($livro['titulo']); ?>" 
-                                     onerror="this.onerror=null; this.src='../img_site/logo.png';">
+                                     alt="<?= htmlspecialchars($titulo_utf8); ?>" 
+                                     onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo.png';">
                             </td>
 
                             <!-- 2. TÍTULO -->
                             <td class="col-titulo">
-                                <div><?= htmlspecialchars($livro['titulo']); ?></div>
+                                <div><?= htmlspecialchars($titulo_utf8); ?></div>
                             </td>
 
                             <!-- 3. AUTOR -->
                             <td>
-                                <?= htmlspecialchars($livro['autor'] ?? 'Não informado'); ?>
+                                <?= htmlspecialchars($autor_utf8); ?>
                             </td>
 
                             <!-- 4. EDITORA -->
                             <td>
-                                <?= htmlspecialchars($livro['editora'] ?? 'Não informada'); ?>
+                                <?= htmlspecialchars($editora_utf8); ?>
                             </td>
 
                             <!-- 5. AVALIAÇÃO -->
@@ -126,11 +136,12 @@ require_once '../includes/header.php';
         </div>
     <?php else: ?>
         <div class="card-box" style="text-align: center; padding: 40px; margin-top: 20px;">
-            <p style="font-size: 16px; color: var(--text-muted); margin-bottom: 15px;"> Nenhum livro foi encontrado para a sua busca.</p>
-            <a href="procurar.php" class="btn-foxy">Ver os Mais Lidos</a>
+            <p style="font-size: 16px; color: var(--text-muted); margin-bottom: 15px;">Nenhum livro foi encontrado para a sua busca.</p>
+            <a href="<?= BASE_URL; ?>procurar.php" class="btn-foxy">Ver os Mais Lidos</a>
         </div>
     <?php endif; ?>
 
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

@@ -1,8 +1,22 @@
-<?php
-require_once '../config/db.php';
+
+<?php 
+require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Bloqueia o acesso de visitantes que não fizeram login
-verificar_autenticacao();
+if (function_exists('verificar_autenticacao')) {
+    verificar_autenticacao();
+} else {
+    iniciar_sessao();
+    if (empty($_SESSION['usuario_id'])) {
+        header('Location: ' . BASE_URL . 'login.php');
+        exit;
+    }
+}
 
 $usuario_id   = $_SESSION['usuario_id'];
 $usuario_nome = $_SESSION['usuario_nome'] ?? 'Leitor';
@@ -30,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare($sql);
             
             if ($stmt->execute([$usuario_id, $livro_nome, $genero, $tempo_leitura, $paginas_lidas, $total_paginas, $progresso_pct])) {
-                header("Location: estante.php?sucesso=adicionado");
+                header("Location: " . BASE_URL . "estante.php?sucesso=adicionado");
                 exit;
             } else {
                 $mensagem = "Erro ao adicionar o livro no seu histórico de leitura.";
@@ -55,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$paginas_lidas, $total_paginas, $progresso_pct, $id, $usuario_id]);
 
-            header("Location: estante.php?sucesso=atualizado");
+            header("Location: " . BASE_URL . "estante.php?sucesso=atualizado");
             exit;
         }
     }
@@ -68,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("DELETE FROM historico_leitura WHERE id = ? AND usuario_id = ?");
             $stmt->execute([$id, $usuario_id]);
 
-            header("Location: estante.php?sucesso=removido");
+            header("Location: " . BASE_URL . "estante.php?sucesso=removido");
             exit;
         }
     }
@@ -100,7 +114,7 @@ foreach ($leituras as $item) {
 // Filtro de aba selecionada
 $status_filtro = $_GET['status'] ?? 'todos';
 
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <!-- CONTAINER COM A CLASSE DA IMAGEM DE FUNDO DA ESTANTE -->
@@ -110,26 +124,26 @@ require_once '../includes/header.php';
         
         <!-- CABEÇALHO DA ESTANTE -->
         <div class="estante-header">
-            <h2> Minha Estante & Painel de Leitura</h2>
-            <p>Bem-vindo(a), <strong><?= htmlspecialchars($usuario_nome); ?></strong>! Acompanhe o progresso do seu histórico literário.</p>
+            <h2>Minha Estante & Painel de Leitura</h2>
+            <p>Bem-vindo(a), <strong><?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($usuario_nome) : $usuario_nome); ?></strong>! Acompanhe o progresso do seu histórico literário.</p>
         </div>
 
         <!-- MENSAGENS DE FEEDBACK VISUAL -->
         <?php if (isset($_GET['sucesso'])): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center;">
                 <?php if ($_GET['sucesso'] === 'adicionado'): ?>
-                     Livro adicionado com sucesso ao seu histórico!
+                    Livro adicionado com sucesso ao seu histórico!
                 <?php elseif ($_GET['sucesso'] === 'atualizado'): ?>
-                     Progresso de leitura atualizado!
+                    Progresso de leitura atualizado!
                 <?php elseif ($_GET['sucesso'] === 'removido'): ?>
-                     Livro removido da sua estante.
+                    Livro removido da sua estante.
                 <?php endif; ?>
             </div>
         <?php endif; ?>
 
         <?php if ($mensagem): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center;">
-                 <?= htmlspecialchars($mensagem); ?>
+                <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
@@ -137,29 +151,29 @@ require_once '../includes/header.php';
         <div class="estante-stats">
             <div class="stat-box">
                 <span class="numero"><?= $total_lendo; ?></span>
-                <span class="rotulo"> A LER AGORA</span>
+                <span class="rotulo">A LER AGORA</span>
             </div>
             <div class="stat-box">
                 <span class="numero"><?= $total_lidos; ?></span>
-                <span class="rotulo"> LIDOS</span>
+                <span class="rotulo">LIDOS</span>
             </div>
             <div class="stat-box">
                 <span class="numero"><?= $total_quero; ?></span>
-                <span class="rotulo"> NÃO INICIADOS</span>
+                <span class="rotulo">NÃO INICIADOS</span>
             </div>
             <div class="stat-box">
                 <span class="numero"><?= count($leituras); ?></span>
-                <span class="rotulo"> TOTAL NA ESTANTE</span>
+                <span class="rotulo">TOTAL NA ESTANTE</span>
             </div>
         </div>
 
         <!-- FORMULÁRIO DE CADASTRO NO HISTÓRICO DE LEITURA -->
         <div style="background-color: #FAF5FF; border: 1.5px solid var(--border-soft); border-radius: var(--radius-card); padding: 25px; margin-bottom: 30px;">
             <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                 Cadastrar Nova Leitura no Histórico
+                Cadastrar Nova Leitura no Histórico
             </h3>
             
-            <form action="estante.php" method="POST">
+            <form action="<?= BASE_URL; ?>estante.php" method="POST">
                 <input type="hidden" name="acao" value="adicionar">
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
@@ -208,17 +222,17 @@ require_once '../includes/header.php';
 
         <!-- ABAS DE NAVEGAÇÃO / FILTROS -->
         <div class="estante-tabs">
-            <a href="estante.php?status=todos" class="tab-btn <?= $status_filtro === 'todos' ? 'active' : ''; ?>">Todos (<?= count($leituras); ?>)</a>
-            <a href="estante.php?status=lendo" class="tab-btn <?= $status_filtro === 'lendo' ? 'active' : ''; ?>">Lendo (<?= $total_lendo; ?>)</a>
-            <a href="estante.php?status=lido" class="tab-btn <?= $status_filtro === 'lido' ? 'active' : ''; ?>">Lidos (<?= $total_lidos; ?>)</a>
-            <a href="estante.php?status=nao_iniciado" class="tab-btn <?= $status_filtro === 'nao_iniciado' ? 'active' : ''; ?>">Não Iniciados (<?= $total_quero; ?>)</a>
+            <a href="<?= BASE_URL; ?>estante.php?status=todos" class="tab-btn <?= $status_filtro === 'todos' ? 'active' : ''; ?>">Todos (<?= count($leituras); ?>)</a>
+            <a href="<?= BASE_URL; ?>estante.php?status=lendo" class="tab-btn <?= $status_filtro === 'lendo' ? 'active' : ''; ?>">Lendo (<?= $total_lendo; ?>)</a>
+            <a href="<?= BASE_URL; ?>estante.php?status=lido" class="tab-btn <?= $status_filtro === 'lido' ? 'active' : ''; ?>">Lidos (<?= $total_lidos; ?>)</a>
+            <a href="<?= BASE_URL; ?>estante.php?status=nao_iniciado" class="tab-btn <?= $status_filtro === 'nao_iniciado' ? 'active' : ''; ?>">Não Iniciados (<?= $total_quero; ?>)</a>
         </div>
 
         <!-- GRID DE LIVROS DO HISTÓRICO -->
         <?php if (!empty($leituras)): ?>
             <div class="estante-grid">
                 <?php foreach ($leituras as $item): 
-                    $pct = (int)($item['progresso_pct'] ?? 0);
+                    $pct           = (int)($item['progresso_pct'] ?? 0);
                     $paginas_lidas = (int)($item['paginas_lidas'] ?? 0);
                     $total_paginas = (int)($item['total_paginas'] ?? 1);
 
@@ -230,25 +244,29 @@ require_once '../includes/header.php';
                     // Determina o status visual
                     if ($pct >= 100) {
                         $status_classe = 'status-lido';
-                        $status_label = 'Concluído';
+                        $status_label  = 'Concluído';
                     } elseif ($pct > 0) {
                         $status_classe = 'status-lendo';
-                        $status_label = 'Lendo';
+                        $status_label  = 'Lendo';
                     } else {
                         $status_classe = 'status-quero';
-                        $status_label = 'Não Iniciado';
+                        $status_label  = 'Não Iniciado';
                     }
+
+                    $genero_item = $item['genero'] ?? 'Geral';
+                    $livro_nome  = $item['livro_nome'] ?? '';
+                    $tempo_item  = $item['tempo_leitura'] ?? '';
                 ?>
                     <div class="estante-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <span class="status-badge <?= $status_classe; ?>"><?= $status_label; ?></span>
-                            <span class="livro-genero-badge"><?= htmlspecialchars($item['genero'] ?? 'Geral'); ?></span>
+                            <span class="livro-genero-badge"><?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($genero_item) : $genero_item); ?></span>
                         </div>
 
                         <div class="livro-info" style="margin-bottom: 10px;">
-                            <h3 class="livro-titulo"><?= htmlspecialchars($item['livro_nome']); ?></h3>
-                            <?php if (!empty($item['tempo_leitura'])): ?>
-                                <p class="livro-autor"> Meta: <?= htmlspecialchars($item['tempo_leitura']); ?></p>
+                            <h3 class="livro-titulo"><?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($livro_nome) : $livro_nome); ?></h3>
+                            <?php if (!empty($tempo_item)): ?>
+                                <p class="livro-autor"> Meta: <?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($tempo_item) : $tempo_item); ?></p>
                             <?php endif; ?>
                         </div>
 
@@ -264,7 +282,7 @@ require_once '../includes/header.php';
                         </div>
 
                         <!-- ATUALIZAR PROGRESSO DE PÁGINAS -->
-                        <form action="estante.php" method="POST" style="margin-top: 12px; background-color: #FAF5FF; padding: 10px; border-radius: 10px; border: 1px solid var(--border-soft);">
+                        <form action="<?= BASE_URL; ?>estante.php" method="POST" style="margin-top: 12px; background-color: #FAF5FF; padding: 10px; border-radius: 10px; border: 1px solid var(--border-soft);">
                             <input type="hidden" name="acao" value="atualizar">
                             <input type="hidden" name="id" value="<?= $item['id']; ?>">
                             <input type="hidden" name="total_paginas" value="<?= $total_paginas; ?>">
@@ -276,11 +294,11 @@ require_once '../includes/header.php';
                         </form>
 
                         <!-- BOTAO DE REMOVER -->
-                        <form action="estante.php" method="POST" style="margin-top: 10px; text-align: right;" onsubmit="return confirm('Deseja realmente remover este livro da sua estante?');">
+                        <form action="<?= BASE_URL; ?>estante.php" method="POST" style="margin-top: 10px; text-align: right;" onsubmit="return confirm('Deseja realmente remover este livro da sua estante?');">
                             <input type="hidden" name="acao" value="remover">
                             <input type="hidden" name="id" value="<?= $item['id']; ?>">
                             <button type="submit" style="background: none; border: none; color: var(--apple-red); font-size: 12px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
-                                 Remover
+                                Remover
                             </button>
                         </form>
                     </div>
@@ -297,4 +315,5 @@ require_once '../includes/header.php';
 
 </main>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

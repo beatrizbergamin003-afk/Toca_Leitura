@@ -1,5 +1,11 @@
+
 <?php
 require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 // Bloqueia acesso de usuários que não são administradores
 if (function_exists('verificar_admin')) {
@@ -7,7 +13,7 @@ if (function_exists('verificar_admin')) {
 } else {
     iniciar_sessao();
     if (empty($_SESSION['is_admin'])) {
-        header('Location: index.php');
+        header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
@@ -58,7 +64,7 @@ try {
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO (mundolivro3.jpg) -->
+<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
 <main class="page-admin-logs-bg">
 
     <section class="admin-logs-container">
@@ -75,7 +81,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
 
             <?php if (!empty($logs)): ?>
-                <form action="admin_logs.php" method="POST" onsubmit="return confirm('Deseja realmente limpar todos os registros de logs?');">
+                <form action="<?= BASE_URL; ?>admin_logs.php" method="POST" onsubmit="return confirm('Deseja realmente limpar todos os registros de logs?');">
                     <input type="hidden" name="acao" value="limpar_logs">
                     <button type="submit" style="background: none; border: 1.5px solid var(--apple-red); color: var(--apple-red); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.2s ease;">
                          Limpar Logs
@@ -87,7 +93,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- AVISO DE TABELA INEXISTENTE -->
         <?php if (!$has_logs_table): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 16px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-size: 14px;">
-                <strong> Aviso:</strong> A tabela de logs (<code>logs_acesso</code> ou <code>logs_sistema</code>) ainda não foi encontrada no seu banco de dados. Execute a migração SQL no seu gerenciador (phpMyAdmin/pgAdmin) para guardar os registos de acesso.
+                 <strong>Aviso:</strong> A tabela de logs (<code>logs_acesso</code> ou <code>logs_sistema</code>) ainda não foi encontrada no seu banco de dados. Execute a migração SQL no seu gerenciador (phpMyAdmin/pgAdmin) para guardar os registros de acesso.
             </div>
         <?php endif; ?>
 
@@ -111,18 +117,22 @@ require_once __DIR__ . '/../includes/header.php';
                     <thead>
                         <tr style="background-color: #FAF5FF; color: var(--text-dark); border-bottom: 1.5px solid var(--border-soft); font-size: 14px; text-align: left;">
                             <th style="padding: 12px;">ID</th>
-                            <th style="padding: 12px;">Utilizador / Nome</th>
+                            <th style="padding: 12px;">Usuário / Nome</th>
                             <th style="padding: 12px;">E-mail Utilizado</th>
                             <th style="padding: 12px;">IP de Origem</th>
-                            <th style="padding: 12px;">Estado</th>
+                            <th style="padding: 12px;">Status</th>
                             <th style="padding: 12px;">Data & Hora</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($logs as $log): 
-                            $usuario_nome = $log['usuario_nome'] ?? $log['nome'] ?? $log['usuario'] ?? 'Visitante / Desconhecido';
-                            $email        = $log['email_tentativa'] ?? $log['email'] ?? '—';
-                            $ip           = $log['ip_origem'] ?? $log['ip'] ?? $log['ip_address'] ?? '127.0.0.1';
+                            $usuario_nome_raw = $log['usuario_nome'] ?? $log['nome'] ?? $log['usuario'] ?? 'Visitante / Desconhecido';
+                            $usuario_nome     = mb_convert_encoding($usuario_nome_raw, 'UTF-8', 'ISO-8859-1');
+                            
+                            $email_raw        = $log['email_tentativa'] ?? $log['email'] ?? '—';
+                            $email            = mb_convert_encoding($email_raw, 'UTF-8', 'ISO-8859-1');
+                            
+                            $ip               = $log['ip_origem'] ?? $log['ip'] ?? $log['ip_address'] ?? '127.0.0.1';
                             
                             // Data do acesso
                             $raw_date = $log['data_acesso'] ?? $log['criado_em'] ?? $log['data'] ?? null;
@@ -135,7 +145,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <tr style="border-bottom: 1px solid var(--border-soft); font-size: 13px;">
                                 <td style="padding: 10px 12px; font-weight: 800; color: var(--text-muted);">#<?= $log['id']; ?></td>
                                 <td style="padding: 10px 12px; font-weight: 800; color: var(--text-dark);">
-                                     <?= htmlspecialchars($usuario_nome); ?>
+                                    <?= htmlspecialchars($usuario_nome); ?>
                                 </td>
                                 <td style="padding: 10px 12px; color: var(--text-dark);">
                                     <?= htmlspecialchars($email); ?>
@@ -147,11 +157,11 @@ require_once __DIR__ . '/../includes/header.php';
                                     <?php if ($has_status): ?>
                                         <?php if ($sucesso): ?>
                                             <span style="color: #15803D; font-weight: 800; background-color: #DCFCE7; padding: 3px 10px; border-radius: 12px; font-size: 11px;">
-                                                 Sucesso
+                                                Sucesso
                                             </span>
                                         <?php else: ?>
                                             <span style="color: #B91C1C; font-weight: 800; background-color: #FEE2E2; padding: 3px 10px; border-radius: 12px; font-size: 11px;">
-                                                 Falha
+                                                Falha
                                             </span>
                                         <?php endif; ?>
                                     <?php else: ?>
@@ -161,7 +171,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td style="padding: 10px 12px; font-weight: 700; color: var(--fox-purple);">
-                                     <?= $data_log; ?>
+                                    <?= $data_log; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -170,13 +180,13 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         <?php elseif ($has_logs_table): ?>
             <div style="text-align: center; padding: 40px 20px; background-color: #FAF5FF; border: 1.5px dashed var(--border-soft); border-radius: 12px; color: var(--text-muted);">
-                <p style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Nenhum registo de acesso encontrado no momento.</p>
-                <p style="font-size: 13px; margin: 0;">As tentativas de login e acessos aparecerão nesta lista conforme os utilizadores navegarem.</p>
+                <p style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Nenhum registro de acesso encontrado no momento.</p>
+                <p style="font-size: 13px; margin: 0;">As tentativas de login e acessos aparecerão nesta lista conforme os usuários navegarem.</p>
             </div>
         <?php endif; ?>
 
         <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
-            <a href="admin.php">← Voltar ao Painel do Administrador</a>
+            <a href="<?= BASE_URL; ?>admin.php">← Voltar ao Painel do Administrador</a>
         </div>
 
     </section>
@@ -184,3 +194,4 @@ require_once __DIR__ . '/../includes/header.php';
 </main>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

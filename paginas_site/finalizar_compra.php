@@ -1,5 +1,11 @@
+
 <?php
 require_once __DIR__ . '/../config/db.php';
+
+// Garante o fallback de BASE_URL caso não esteja definida no db.php
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
+}
 
 if (function_exists('iniciar_sessao')) {
     iniciar_sessao();
@@ -10,14 +16,14 @@ if (function_exists('iniciar_sessao')) {
 $usuario_id = $_SESSION['usuario_id'] ?? $_SESSION['id'] ?? null;
 
 if (!$usuario_id) {
-    header('Location: login.php?erro=login_necessario');
+    header('Location: ' . BASE_URL . 'login.php?erro=login_necessario');
     exit;
 }
 
 $carrinho = $_SESSION['carrinho'] ?? [];
 
 if (empty($carrinho)) {
-    header('Location: carrinho.php?erro=carrinho_vazio');
+    header('Location: ' . BASE_URL . 'carrinho.php?erro=carrinho_vazio');
     exit;
 }
 
@@ -70,13 +76,14 @@ try {
     // Limpa o carrinho
     unset($_SESSION['carrinho']);
 
-    header('Location: index.php?sucesso=compra_finalizada');
+    header('Location: ' . BASE_URL . 'index.php?sucesso=compra_finalizada');
     exit;
 
 } catch (Exception $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    header('Location: carrinho.php?erro=' . urlencode('Erro ao finalizar compra: ' . $e->getMessage()));
+    header('Location: ' . BASE_URL . 'carrinho.php?erro=' . urlencode('Erro ao finalizar compra: ' . $e->getMessage()));
     exit;
 }
+
