@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 2. Como Executar o Projeto Localmente
 Para rodar o projeto Toca de Leitura na sua máquina, é necessário configurar um ambiente local com PHP e o banco de dados PostgreSQL.
 
@@ -9,6 +10,25 @@ Git instalado na máquina.
 Passo 1: Clonar o Repositório
 Abra o seu terminal (ou Git Bash) e execute os comandos:
 
+=======
+## 2. Como Executar o Projeto Localmente
+
+Para rodar o projeto Toca de Leitura na sua máquina, é necessário configurar um ambiente local com PHP e o banco de dados PostgreSQL.
+
+### 2.1. Pré-Requisitos
+- PHP (v8.2 ou superior) habilitado com as extensões `pdo_pgsql` e `mbstring`.
+- PostgreSQL instalado e em execução na porta 5432.
+- Git instalado na máquina.
+
+---
+
+### 2.2. Instalação
+
+#### Passo 1: Clonar o Repositório
+Abra o seu terminal (ou Git Bash) e execute os comandos:
+
+```bash
+>>>>>>> 811c1e6471ca4f35a81ea83f534c6db5b30a010f
 # Clonar o repositório do projeto
 git clone https://github.com/beatrizbergamin003-afk/projetointegrador_tocaleitura.git
 
