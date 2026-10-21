@@ -16,7 +16,7 @@ Abra o seu terminal (ou Git Bash) e execute os comandos:
 
 ```bash
 # Clonar o repositório do projeto
-git clone [https://github.com/beatrizbergamin003-afk/projetointegrador_tocaleitura.git](https://github.com/beatrizbergamin003-afk/projetointegrador_tocaleitura.git)
+git clone https://github.com/beatrizbergamin003-afk/projetointegrador_tocaleitura.git
 
 # Acessar a pasta do projeto
 cd projetointegrador_tocaleitura
