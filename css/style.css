@@ -3,6 +3,28 @@
    Cores: Creme Aconchegante, Laranja Terracota, Amarelo & Vermelho Maçã 🍎
    ========================================================================== */
 
+   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400;1,600&display=swap');
+
+/* Estilização para o nome do autor */
+.autor, 
+.livro-autor, 
+.col-autor, 
+.card-livro p,
+.autor-info,
+p, 
+span {
+    font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* Força o estilo itálico específico para classes de autor e textos secundários */
+.autor, 
+.livro-autor, 
+.col-autor, 
+.card-livro p {
+    font-style: italic !important;
+    color: #6D28D9 !important;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap');
 
 :root {
@@ -1467,3 +1489,249 @@ footer {
     margin-left: 20px;
     color: var(--text-muted);
 }
+
+
+/* ==========================================================================
+   PÁGINA DE GERENCIAMENTO DE LIVROS (ADMIN_LIVROS.PHP)
+   ========================================================================== */
+
+/* Fundo da página com a imagem mundolivro3.jpg */
+.page-admin-livros-bg {
+    background: url('../img_site/mundolivro3.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Card translúcido no padrão Roxo Mágico */
+.admin-livros-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe do topo em gradiente */
+.admin-livros-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+/* ==========================================================================
+   PÁGINA DE LOGS DO SISTEMA (ADMIN_LOGS.PHP)
+   ========================================================================== */
+
+/* Fundo da página com mundolivro3.jpg */
+.page-admin-logs-bg {
+    background: url('../img_site/mundolivro3.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Container translúcido Roxo Mágico */
+.admin-logs-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe superior em gradiente roxo */
+.admin-logs-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+/* ==========================================================================
+   PÁGINA DE GERENCIAMENTO DE PEDIDOS (ADMIN_PEDIDOS.PHP)
+   ========================================================================== */
+
+/* Fundo da página com mundolivro3.jpg */
+.page-admin-pedidos-bg {
+    background: url('../img_site/mundolivro3.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Container translúcido Roxo Mágico */
+.admin-pedidos-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe superior em gradiente roxo */
+.admin-pedidos-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+/* ==========================================================================
+   PÁGINA DE MODERAÇÃO DE POSTAGENS DO FEED (ADMIN_POSTAGENS.PHP)
+   ========================================================================== */
+
+/* Fundo da página com mundolivro3.jpg */
+.page-admin-postagens-bg {
+    background: url('../img_site/mundolivro3.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Container translúcido Roxo Mágico */
+.admin-postagens-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe superior em gradiente roxo */
+.admin-postagens-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+
+/* ==========================================================================
+   PÁGINA DE GERENCIAMENTO DE USUÁRIOS (ADMIN_USUARIOS.PHP)
+   ========================================================================== */
+
+/* Fundo da página com mundolivro3.jpg */
+.page-admin-usuarios-bg {
+    background: url('../img_site/mundolivro3.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Container translúcido Roxo Mágico */
+.admin-usuarios-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe superior em gradiente roxo */
+.admin-usuarios-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+/* ==========================================================================
+   PÁGINA DE MENSAGENS E CONTATO (ADMIN_MENSAGENS.PHP)
+   ========================================================================== */
+
+/* Fundo da página com a imagem mundolivro3.jpg */
+.page-admin-mensagens-bg {
+    background: url('../img_site/mundolivro3.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    padding: 35px 20px;
+}
+
+/* Container translúcido Roxo Mágico */
+.admin-mensagens-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-card);
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.2);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe superior em gradiente roxo */
+.admin-mensagens-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--bg-header-dark) 0%, var(--bg-header) 100%);
+}
+
+/* Importa a fonte elegante "Playfair Display" */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap');
+
+/* Aplica nos títulos dos livros */
+.col-titulo,
+.col-titulo div,
+.tabela-compras td:nth-child(2),
+.card-livro h3,
+.livro-titulo,
+.livro-nome,
+.feed-conteudo .livro-genero-badge {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
+    letter-spacing: 0.3px;
+}
+

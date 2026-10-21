@@ -125,7 +125,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php if (isset($_SESSION['usuario_id'])): ?>
         <section style="max-width: 680px; margin: 0 auto 40px auto;">
             <h3 style="font-size: 20px; font-weight: 800; color: #FFFFFF; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85); margin-bottom: 15px; text-align: center;">
-                📋 Minhas Mensagens e Respostas da Administração
+                 Minhas Mensagens e Respostas da Administração
             </h3>
 
             <?php if (empty($minhas_mensagens)): ?>

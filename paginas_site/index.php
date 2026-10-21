@@ -5,6 +5,13 @@ require_once __DIR__ . '/../includes/header.php';
 
 <main class="main-container">
 
+    <!-- MENSAGEM DE SUCESSO DE COMPRA FINALIZADA -->
+    <?php if (isset($_GET['sucesso']) && $_GET['sucesso'] === 'compra_finalizada'): ?>
+        <div style="max-width: 1100px; margin: 0 auto 25px auto; background-color: #DCFCE7; color: #15803D; padding: 16px 22px; border-radius: 12px; border: 1.5px solid #86EFAC; font-weight: 800; text-align: center; font-size: 15px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.15);">
+             Compra finalizada com sucesso! O seu pedido foi registrado e em breve será processado.
+        </div>
+    <?php endif; ?>
+
     <!-- SEÇÃO DE APRESENTAÇÃO COM A NOVA LOGO -->
     <section class="hero-section">
         <!-- Logo oficial com fundo suave lilás e padding -->
@@ -24,7 +31,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div style="margin-top: 18px;">
                 <?php if (!isset($_SESSION['usuario_id'])): ?>
-                    <a href="cadastrar.php" class="btn-foxy"> Criar Conta </a>
+                    <a href="cadastrar.php" class="btn-foxy"> Criar Conta</a>
                 <?php else: ?>
                     <a href="compras.php" class="btn-foxy"> Explorar Livros do Mercado</a>
                 <?php endif; ?>
@@ -55,7 +62,7 @@ require_once __DIR__ . '/../includes/header.php';
             </li>
 
             <li class="guia-item">
-                <span>✉️ <strong>Atendimento e Suporte:</strong> Envie suas dúvidas, sugestões ou mensagens diretamente para a equipe da Toca.</span>
+                <span> <strong>Atendimento e Suporte:</strong> Envie suas dúvidas, sugestões ou mensagens diretamente para a equipe da Toca.</span>
                 <a href="contato.php" class="guia-link">Contate-nos →</a>
             </li>
 

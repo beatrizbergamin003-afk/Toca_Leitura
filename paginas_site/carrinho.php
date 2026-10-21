@@ -1,3 +1,4 @@
+
 <?php
 require_once '../config/db.php';
 iniciar_sessao();
@@ -100,23 +101,30 @@ require_once '../includes/header.php';
         </p>
     </div>
 
+    <!-- MENSAGEM DE ERRO CASO HOUVER -->
+    <?php if (isset($_GET['erro'])): ?>
+        <div style="max-width: 800px; margin: 0 auto 20px auto; background-color: #FEF3C7; color: #B45309; padding: 14px 20px; border-radius: 12px; border: 1.5px solid #FCD34D; font-weight: 800; text-align: center; font-size: 14px;">
+             <?= htmlspecialchars($_GET['erro']); ?>
+        </div>
+    <?php endif; ?>
+
     <?php if (!empty($livros_carrinho)): ?>
 
-        <!-- AÇÕES DO TOPO -->
+        <!-- AÇÕES DO TOPO COM ESTILO ROXO MÁGICO -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-            <a href="compras.php" class="btn-secondary" style="font-size: 12px; padding: 7px 16px;">
+            <a href="compras.php" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; text-decoration: none;">
                 ← Continuar Comprando
             </a>
 
             <form action="carrinho.php" method="POST" onsubmit="return confirm('Tem certeza que deseja esvaziar todo o carrinho?');">
                 <input type="hidden" name="acao" value="limpar">
-                <button type="submit" class="btn-foxy" style="background-color: var(--apple-red) !important; font-size: 12px; padding: 7px 16px;">
+                <button type="submit" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; cursor: pointer;">
                      Esvaziar Carrinho
                 </button>
             </form>
         </div>
 
-        <!-- TABELA ESTILIZADA DE ITENS DO CARRINHO (FUNDO BRANCO SUAVE) -->
+        <!-- TABELA ESTILIZADA DE ITENS DO CARRINHO -->
         <div class="tabela-container-compras" style="background-color: rgba(255, 255, 255, 0.93) !important; backdrop-filter: blur(6px);">
             <table class="tabela-compras">
                 <thead>
@@ -160,9 +168,9 @@ require_once '../includes/header.php';
                                     <input type="hidden" name="acao" value="atualizar">
                                     <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
                                     <input type="number" name="quantidade" value="<?= $item['quantidade']; ?>" min="1" max="99" 
-                                           style="width: 60px; text-align: center; padding: 6px; border-radius: 12px; font-weight: 700;">
-                                    <button type="submit" class="btn-foxy" style="padding: 5px 10px; font-size: 11px;" title="Atualizar quantidade">
-                                        🔄
+                                           style="width: 60px; text-align: center; padding: 6px; border-radius: 12px; font-weight: 700; border: 1.5px solid var(--border-soft);">
+                                    <button type="submit" class="btn-foxy" style="padding: 6px 10px; font-size: 11px; cursor: pointer;" title="Atualizar quantidade">
+                                        
                                     </button>
                                 </form>
                             </td>
@@ -178,9 +186,9 @@ require_once '../includes/header.php';
                                     <input type="hidden" name="acao" value="remover">
                                     <input type="hidden" name="livro_id" value="<?= $item['id']; ?>">
                                     <button type="submit" class="btn-foxy" 
-                                            style="background-color: var(--apple-red) !important; padding: 6px 12px; font-size: 12px;" 
+                                            style="padding: 6px 12px; font-size: 12px; cursor: pointer;" 
                                             title="Remover este livro">
-                                        ✖
+                                        
                                     </button>
                                 </form>
                             </td>
@@ -194,23 +202,26 @@ require_once '../includes/header.php';
         <div style="display: flex; justify-content: flex-end; margin-top: 20px; margin-bottom: 40px;">
             <div class="card-box" style="width: 100%; max-width: 380px; padding: 25px; border: 2.5px solid var(--bg-header); border-radius: 20px; text-align: right; background-color: rgba(255, 255, 255, 0.94) !important; backdrop-filter: blur(8px);">
                 <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; border-bottom: 1px dashed var(--border-soft); padding-bottom: 8px;">
-                    📋 Resumo do Pedido
+                     Resumo do Pedido
                 </h3>
 
                 <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">
                     Total de Livros: <strong><?= array_sum($_SESSION['carrinho']); ?> item(ns)</strong>
                 </p>
 
-                <p style="font-size: 22px; font-weight: 900; color: var(--apple-red); margin-bottom: 20px;">
+                <p style="font-size: 22px; font-weight: 900; color: var(--fox-purple, #6D28D9); margin-bottom: 20px;">
                     Total: R$ <?= number_format($total_carrinho, 2, ',', '.'); ?>
                 </p>
 
-                <?php if (isset($_SESSION['usuario_id'])): ?>
-                    <a href="finalizar_compra.php" class="btn-foxy" style="padding: 12px 28px; font-size: 15px; width: 100%; box-sizing: border-box;">
-                         Finalizar Compra
-                    </a>
+                <?php if (isset($_SESSION['usuario_id']) || isset($_SESSION['id'])): ?>
+                    <!-- FORMULÁRIO POST PARA FINALIZAR A COMPRA -->
+                    <form action="finalizar_compra.php" method="POST" style="width: 100%;">
+                        <button type="submit" class="btn-foxy" style="padding: 12px 28px; font-size: 15px; width: 100%; box-sizing: border-box; cursor: pointer;">
+                             Finalizar Pedido
+                        </button>
+                    </form>
                 <?php else: ?>
-                    <a href="login.php" class="btn-foxy" style="padding: 12px 28px; font-size: 14px; width: 100%; box-sizing: border-box; background-color: var(--warm-yellow) !important; color: var(--text-dark) !important;">
+                    <a href="login.php" class="btn-foxy" style="padding: 12px 28px; font-size: 14px; width: 100%; box-sizing: border-box; display: block; text-align: center; text-decoration: none;">
                          Faça Login para Finalizar
                     </a>
                 <?php endif; ?>
@@ -219,7 +230,7 @@ require_once '../includes/header.php';
 
     <?php else: ?>
 
-        <!-- ESTADO QUANDO O CARRINHO ESTÁ VAZIO (VIDRO FOSCO + SUA LOGO) -->
+        <!-- ESTADO QUANDO O CARRINHO ESTÁ VAZIO -->
         <div class="card-box" style="text-align: center; padding: 50px 20px; max-width: 550px; margin: 40px auto; border-radius: 22px; background-color: rgba(255, 255, 255, 0.92) !important; backdrop-filter: blur(8px); border: 2px solid var(--border-soft);">
             <img src="../img_site/logo_toca.png" alt="A Toca de Leitura" style="width: 110px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));" onerror="this.onerror=null; this.src='../img_site/logo.png';">
             
@@ -229,7 +240,7 @@ require_once '../includes/header.php';
             <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.6;">
                 Parece que você ainda não adicionou nenhum livro à sua toca. Explore nosso acervo e encontre sua próxima leitura!
             </p>
-            <a href="compras.php" class="btn-foxy" style="padding: 11px 28px; font-size: 14px;">
+            <a href="compras.php" class="btn-foxy" style="padding: 11px 28px; font-size: 14px; text-decoration: none;">
                  Ir para a Loja de Livros
             </a>
         </div>
@@ -239,3 +250,4 @@ require_once '../includes/header.php';
 </main>
 
 <?php require_once '../includes/footer.php'; ?>
+

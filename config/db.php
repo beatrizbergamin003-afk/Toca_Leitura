@@ -11,11 +11,18 @@ $user     = "raposa";
 $password = "raposa123";
 
 try {
-    // Instancia a conexão PDO configurada para tratamento rigoroso de erros
-    $pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $user, $password, [
+    // DSN do PostgreSQL configurado com suporte explícito ao charset UTF-8
+    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;options='--client_encoding=UTF8'";
+
+    // Instancia a conexão PDO configurada para tratamento de erros e fetch associativo
+    $pdo = new PDO($dsn, $user, $password, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Levanta exceções em falhas SQL
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC        // Retorna dados como array associativo
     ]);
+
+    // Garante a codificação UTF-8 na sessão do banco
+    $pdo->exec("SET client_encoding TO 'UTF8'");
+
 } catch (PDOException $e) {
     // Interrompe a execução exibindo a mensagem em caso de falha de conexão
     die("Erro na conexão com o PostgreSQL: " . $e->getMessage());

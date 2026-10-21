@@ -37,13 +37,20 @@ if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
                 </a>
             </div>
             
-            <!-- MENU COMPACTO DE NAVEGAÇÃO -->
+            <!-- MENU DE NAVEGAÇÃO REORDENADO -->
             <nav>
                 <ul>
                     <li><a href="index.php">Início</a></li>
                     <li><a href="compras.php">Compras</a></li>
                     <li><a href="procurar.php">Procure</a></li>
                     <li><a href="resenhas.php">Resenhas</a></li>
+                    
+                    <?php if (isset($_SESSION['usuario_id'])): ?>
+                        <li><a href="interagir.php">Interaja</a></li>
+                        <li><a href="estante.php">Minha Estante</a></li>
+                        <li><a href="atualizar_status.php">Status</a></li>
+                    <?php endif; ?>
+
                     <li><a href="contato.php">Contate-nos</a></li>
                     
                     <li>
@@ -53,12 +60,8 @@ if (isset($_SESSION['carrinho']) && is_array($_SESSION['carrinho'])) {
                     </li>
 
                     <?php if (isset($_SESSION['usuario_id'])): ?>
-                        <li><a href="estante.php">Minha Estante</a></li>
-                        <li><a href="interagir.php">Interaja</a></li>
-                        <li><a href="atualizar_status.php">Status</a></li>
-                        
                         <?php if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true): ?>
-                            <li><a href="admin.php" style="color: #FFC107;">🛡️ Admin</a></li>
+                            <li><a href="admin.php" style="color: #FFC107;"> Admin</a></li>
                         <?php endif; ?>
 
                         <li><a href="deletar_usuario.php" style="background: rgba(198, 40, 40, 0.4);">Deletar Conta</a></li>
