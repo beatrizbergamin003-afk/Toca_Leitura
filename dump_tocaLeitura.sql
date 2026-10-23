@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 4YEoyEihncps63z06bWRkTxVmyxHwOKA4DslCa6tGp9iB5wZJWa94doJq8S0bUK
+\restrict Me9w0JI656p1hK38afOKtxfSlWsShaUybsZ4ybBAR3g8AnbY44Sw7v2x7gpp2Po
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -822,5 +822,5 @@ ALTER TABLE ONLY public.postagens_feed
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 4YEoyEihncps63z06bWRkTxVmyxHwOKA4DslCa6tGp9iB5wZJWa94doJq8S0bUK
+\unrestrict Me9w0JI656p1hK38afOKtxfSlWsShaUybsZ4ybBAR3g8AnbY44Sw7v2x7gpp2Po
 
