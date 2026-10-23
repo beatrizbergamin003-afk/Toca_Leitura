@@ -1,6 +1,11 @@
 --
--- PostgreSQL database dump para Toca de Leitura
+-- PostgreSQL database dump
 --
+
+\restrict 7AbzkNatgBXUYVK84uEEIUajXJYEhkRfbRC4FV8qlT9raQWKhYbDW8nrdsyxN08
+
+-- Dumped from database version 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)
+-- Dumped by pg_dump version 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -15,70 +20,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 SET default_tablespace = '';
+
 SET default_table_access_method = heap;
-
---
--- Name: usuarios; Type: TABLE; Schema: public; Owner: raposa
---
-
-CREATE TABLE IF NOT EXISTS public.usuarios (
-    id integer NOT NULL,
-    nome character varying(100) NOT NULL,
-    email character varying(150) NOT NULL,
-    senha character varying(255) NOT NULL,
-    is_admin boolean DEFAULT false,
-    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-ALTER TABLE public.usuarios OWNER TO raposa;
-
-CREATE SEQUENCE IF NOT EXISTS public.usuarios_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.usuarios_id_seq OWNER TO raposa;
-ALTER SEQUENCE public.usuarios_id_seq OWNED BY public.usuarios.id;
-ALTER TABLE ONLY public.usuarios ALTER COLUMN id SET DEFAULT nextval('public.usuarios_id_seq'::regclass);
-
---
--- Name: livros; Type: TABLE; Schema: public; Owner: raposa
---
-
-CREATE TABLE IF NOT EXISTS public.livros (
-    id integer NOT NULL,
-    titulo character varying(200) NOT NULL,
-    autor character varying(100) NOT NULL,
-    editora character varying(100),
-    genero character varying(50) NOT NULL,
-    preco numeric(10,2) DEFAULT 0.00 NOT NULL,
-    estrelas numeric(2,1) DEFAULT 5.0,
-    capa_url text,
-    total_leitores integer DEFAULT 0
-);
-
-ALTER TABLE public.livros OWNER TO raposa;
-
-CREATE SEQUENCE IF NOT EXISTS public.livros_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.livros_id_seq OWNER TO raposa;
-ALTER SEQUENCE public.livros_id_seq OWNED BY public.livros.id;
-ALTER TABLE ONLY public.livros ALTER COLUMN id SET DEFAULT nextval('public.livros_id_seq'::regclass);
 
 --
 -- Name: pedidos; Type: TABLE; Schema: public; Owner: raposa
 --
 
-CREATE TABLE IF NOT EXISTS public.pedidos (
+CREATE TABLE public.pedidos (
     id integer NOT NULL,
     usuario_id integer NOT NULL,
     total numeric(10,2) NOT NULL,
@@ -86,108 +35,29 @@ CREATE TABLE IF NOT EXISTS public.pedidos (
     status character varying(50) DEFAULT 'Concluído'::character varying
 );
 
+
 ALTER TABLE public.pedidos OWNER TO raposa;
 
-CREATE SEQUENCE IF NOT EXISTS public.pedidos_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.pedidos_id_seq OWNER TO raposa;
-ALTER SEQUENCE public.pedidos_id_seq OWNED BY public.pedidos.id;
-ALTER TABLE ONLY public.pedidos ALTER COLUMN id SET DEFAULT nextval('public.pedidos_id_seq'::regclass);
-
 --
--- Name: itens_pedido; Type: TABLE; Schema: public; Owner: raposa
+-- Name: compras; Type: VIEW; Schema: public; Owner: raposa
 --
 
-CREATE TABLE IF NOT EXISTS public.itens_pedido (
-    id integer NOT NULL,
-    pedido_id integer NOT NULL,
-    livro_id integer,
-    quantidade integer NOT NULL,
-    preco_unitario numeric(10,2) NOT NULL
-);
+CREATE VIEW public.compras AS
+ SELECT id,
+    usuario_id,
+    total,
+    data_pedido,
+    status
+   FROM public.pedidos;
 
-ALTER TABLE public.itens_pedido OWNER TO raposa;
 
-CREATE SEQUENCE IF NOT EXISTS public.itens_pedido_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.itens_pedido_id_seq OWNER TO raposa;
-ALTER SEQUENCE public.itens_pedido_id_seq OWNED BY public.itens_pedido.id;
-ALTER TABLE ONLY public.itens_pedido ALTER COLUMN id SET DEFAULT nextval('public.itens_pedido_id_seq'::regclass);
-
---
--- Name: historico_leitura; Type: TABLE; Schema: public; Owner: raposa
---
-
-CREATE TABLE IF NOT EXISTS public.historico_leitura (
-    id integer NOT NULL,
-    usuario_id integer NOT NULL,
-    livro_nome character varying(200) NOT NULL,
-    genero character varying(50),
-    tempo_leitura character varying(50),
-    paginas_lidas integer DEFAULT 0,
-    total_paginas integer DEFAULT 0,
-    progresso_pct integer DEFAULT 0,
-    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-ALTER TABLE public.historico_leitura OWNER TO raposa;
-
-CREATE SEQUENCE IF NOT EXISTS public.historico_leitura_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.historico_leitura_id_seq OWNER TO raposa;
-ALTER SEQUENCE public.historico_leitura_id_seq OWNED BY public.historico_leitura.id;
-ALTER TABLE ONLY public.historico_leitura ALTER COLUMN id SET DEFAULT nextval('public.historico_leitura_id_seq'::regclass);
-
---
--- Name: logs_acesso; Type: TABLE; Schema: public; Owner: raposa
---
-
-CREATE TABLE IF NOT EXISTS public.logs_acesso (
-    id integer NOT NULL,
-    usuario_id integer,
-    email_tentativa character varying(150) NOT NULL,
-    ip_origem character varying(45),
-    sucesso boolean DEFAULT true,
-    data_acesso timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-ALTER TABLE public.logs_acesso OWNER TO raposa;
-
-CREATE SEQUENCE IF NOT EXISTS public.logs_acesso_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.logs_acesso_id_seq OWNER TO raposa;
-ALTER SEQUENCE public.logs_acesso_id_seq OWNED BY public.logs_acesso.id;
-ALTER TABLE ONLY public.logs_acesso ALTER COLUMN id SET DEFAULT nextval('public.logs_acesso_id_seq'::regclass);
+ALTER VIEW public.compras OWNER TO raposa;
 
 --
 -- Name: mensagens_contato; Type: TABLE; Schema: public; Owner: raposa
 --
 
-CREATE TABLE IF NOT EXISTS public.mensagens_contato (
+CREATE TABLE public.mensagens_contato (
     id integer NOT NULL,
     usuario_id integer,
     nome character varying(100) NOT NULL,
@@ -200,9 +70,73 @@ CREATE TABLE IF NOT EXISTS public.mensagens_contato (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
+
 ALTER TABLE public.mensagens_contato OWNER TO raposa;
 
-CREATE SEQUENCE IF NOT EXISTS public.mensagens_contato_id_seq
+--
+-- Name: contatos; Type: VIEW; Schema: public; Owner: raposa
+--
+
+CREATE VIEW public.contatos AS
+ SELECT id,
+    usuario_id,
+    nome,
+    email,
+    assunto,
+    mensagem,
+    resposta_admin,
+    data_resposta,
+    status,
+    criado_em
+   FROM public.mensagens_contato;
+
+
+ALTER VIEW public.contatos OWNER TO raposa;
+
+--
+-- Name: fale_conosco; Type: VIEW; Schema: public; Owner: raposa
+--
+
+CREATE VIEW public.fale_conosco AS
+ SELECT id,
+    usuario_id,
+    nome,
+    email,
+    assunto,
+    mensagem,
+    resposta_admin,
+    data_resposta,
+    status,
+    criado_em
+   FROM public.mensagens_contato;
+
+
+ALTER VIEW public.fale_conosco OWNER TO raposa;
+
+--
+-- Name: historico_leitura; Type: TABLE; Schema: public; Owner: raposa
+--
+
+CREATE TABLE public.historico_leitura (
+    id integer NOT NULL,
+    usuario_id integer NOT NULL,
+    livro_nome character varying(200) NOT NULL,
+    genero character varying(50),
+    tempo_leitura character varying(50),
+    paginas_lidas integer DEFAULT 0,
+    total_paginas integer DEFAULT 0,
+    progresso_pct integer DEFAULT 0,
+    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.historico_leitura OWNER TO raposa;
+
+--
+-- Name: historico_leitura_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.historico_leitura_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -210,15 +144,217 @@ CREATE SEQUENCE IF NOT EXISTS public.mensagens_contato_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
+ALTER SEQUENCE public.historico_leitura_id_seq OWNER TO raposa;
+
+--
+-- Name: historico_leitura_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
+ALTER SEQUENCE public.historico_leitura_id_seq OWNED BY public.historico_leitura.id;
+
+
+--
+-- Name: itens_pedido; Type: TABLE; Schema: public; Owner: raposa
+--
+
+CREATE TABLE public.itens_pedido (
+    id integer NOT NULL,
+    pedido_id integer NOT NULL,
+    livro_id integer,
+    quantidade integer NOT NULL,
+    preco_unitario numeric(10,2) NOT NULL
+);
+
+
+ALTER TABLE public.itens_pedido OWNER TO raposa;
+
+--
+-- Name: itens_pedido_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.itens_pedido_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.itens_pedido_id_seq OWNER TO raposa;
+
+--
+-- Name: itens_pedido_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
+ALTER SEQUENCE public.itens_pedido_id_seq OWNED BY public.itens_pedido.id;
+
+
+--
+-- Name: livros; Type: TABLE; Schema: public; Owner: raposa
+--
+
+CREATE TABLE public.livros (
+    id integer NOT NULL,
+    titulo character varying(200) NOT NULL,
+    autor character varying(100) NOT NULL,
+    editora character varying(100),
+    genero character varying(50) NOT NULL,
+    preco numeric(10,2) DEFAULT 0.00 NOT NULL,
+    estrelas numeric(2,1) DEFAULT 5.0,
+    capa_url text,
+    total_leitores integer DEFAULT 0
+);
+
+
+ALTER TABLE public.livros OWNER TO raposa;
+
+--
+-- Name: livros_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.livros_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.livros_id_seq OWNER TO raposa;
+
+--
+-- Name: livros_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
+ALTER SEQUENCE public.livros_id_seq OWNED BY public.livros.id;
+
+
+--
+-- Name: logs_acesso; Type: TABLE; Schema: public; Owner: raposa
+--
+
+CREATE TABLE public.logs_acesso (
+    id integer NOT NULL,
+    usuario_id integer,
+    email_tentativa character varying(150) NOT NULL,
+    ip_origem character varying(45),
+    sucesso boolean DEFAULT true,
+    data_acesso timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.logs_acesso OWNER TO raposa;
+
+--
+-- Name: logs_acesso_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.logs_acesso_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.logs_acesso_id_seq OWNER TO raposa;
+
+--
+-- Name: logs_acesso_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
+ALTER SEQUENCE public.logs_acesso_id_seq OWNED BY public.logs_acesso.id;
+
+
+--
+-- Name: logs_sistema; Type: VIEW; Schema: public; Owner: raposa
+--
+
+CREATE VIEW public.logs_sistema AS
+ SELECT id,
+    usuario_id,
+    email_tentativa,
+    ip_origem,
+    sucesso,
+    data_acesso
+   FROM public.logs_acesso;
+
+
+ALTER VIEW public.logs_sistema OWNER TO raposa;
+
+--
+-- Name: mensagens; Type: VIEW; Schema: public; Owner: raposa
+--
+
+CREATE VIEW public.mensagens AS
+ SELECT id,
+    usuario_id,
+    nome,
+    email,
+    assunto,
+    mensagem,
+    resposta_admin,
+    data_resposta,
+    status,
+    criado_em
+   FROM public.mensagens_contato;
+
+
+ALTER VIEW public.mensagens OWNER TO raposa;
+
+--
+-- Name: mensagens_contato_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.mensagens_contato_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
 ALTER SEQUENCE public.mensagens_contato_id_seq OWNER TO raposa;
+
+--
+-- Name: mensagens_contato_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
 ALTER SEQUENCE public.mensagens_contato_id_seq OWNED BY public.mensagens_contato.id;
-ALTER TABLE ONLY public.mensagens_contato ALTER COLUMN id SET DEFAULT nextval('public.mensagens_contato_id_seq'::regclass);
+
+
+--
+-- Name: pedidos_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.pedidos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.pedidos_id_seq OWNER TO raposa;
+
+--
+-- Name: pedidos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
+ALTER SEQUENCE public.pedidos_id_seq OWNED BY public.pedidos.id;
+
 
 --
 -- Name: postagens_feed; Type: TABLE; Schema: public; Owner: raposa
 --
 
-CREATE TABLE IF NOT EXISTS public.postagens_feed (
+CREATE TABLE public.postagens_feed (
     id integer NOT NULL,
     usuario_id integer NOT NULL,
     livro_nome character varying(200) NOT NULL,
@@ -228,9 +364,14 @@ CREATE TABLE IF NOT EXISTS public.postagens_feed (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
+
 ALTER TABLE public.postagens_feed OWNER TO raposa;
 
-CREATE SEQUENCE IF NOT EXISTS public.postagens_feed_id_seq
+--
+-- Name: postagens_feed_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.postagens_feed_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -238,24 +379,35 @@ CREATE SEQUENCE IF NOT EXISTS public.postagens_feed_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
 ALTER SEQUENCE public.postagens_feed_id_seq OWNER TO raposa;
+
+--
+-- Name: postagens_feed_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
 ALTER SEQUENCE public.postagens_feed_id_seq OWNED BY public.postagens_feed.id;
-ALTER TABLE ONLY public.postagens_feed ALTER COLUMN id SET DEFAULT nextval('public.postagens_feed_id_seq'::regclass);
+
 
 --
 -- Name: resenhas_videos; Type: TABLE; Schema: public; Owner: raposa
 --
 
-CREATE TABLE IF NOT EXISTS public.resenhas_videos (
+CREATE TABLE public.resenhas_videos (
     id integer NOT NULL,
     titulo_livro character varying(200) NOT NULL,
     url_video character varying(500) NOT NULL,
     resumo text
 );
 
+
 ALTER TABLE public.resenhas_videos OWNER TO raposa;
 
-CREATE SEQUENCE IF NOT EXISTS public.resenhas_videos_id_seq
+--
+-- Name: resenhas_videos_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.resenhas_videos_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -263,28 +415,138 @@ CREATE SEQUENCE IF NOT EXISTS public.resenhas_videos_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
 ALTER SEQUENCE public.resenhas_videos_id_seq OWNER TO raposa;
+
+--
+-- Name: resenhas_videos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
 ALTER SEQUENCE public.resenhas_videos_id_seq OWNED BY public.resenhas_videos.id;
+
+
+--
+-- Name: usuarios; Type: TABLE; Schema: public; Owner: raposa
+--
+
+CREATE TABLE public.usuarios (
+    id integer NOT NULL,
+    nome character varying(100) NOT NULL,
+    email character varying(150) NOT NULL,
+    senha character varying(255) NOT NULL,
+    is_admin boolean DEFAULT false,
+    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.usuarios OWNER TO raposa;
+
+--
+-- Name: usuarios_id_seq; Type: SEQUENCE; Schema: public; Owner: raposa
+--
+
+CREATE SEQUENCE public.usuarios_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.usuarios_id_seq OWNER TO raposa;
+
+--
+-- Name: usuarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: raposa
+--
+
+ALTER SEQUENCE public.usuarios_id_seq OWNED BY public.usuarios.id;
+
+
+--
+-- Name: historico_leitura id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.historico_leitura ALTER COLUMN id SET DEFAULT nextval('public.historico_leitura_id_seq'::regclass);
+
+
+--
+-- Name: itens_pedido id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.itens_pedido ALTER COLUMN id SET DEFAULT nextval('public.itens_pedido_id_seq'::regclass);
+
+
+--
+-- Name: livros id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.livros ALTER COLUMN id SET DEFAULT nextval('public.livros_id_seq'::regclass);
+
+
+--
+-- Name: logs_acesso id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.logs_acesso ALTER COLUMN id SET DEFAULT nextval('public.logs_acesso_id_seq'::regclass);
+
+
+--
+-- Name: mensagens_contato id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.mensagens_contato ALTER COLUMN id SET DEFAULT nextval('public.mensagens_contato_id_seq'::regclass);
+
+
+--
+-- Name: pedidos id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.pedidos ALTER COLUMN id SET DEFAULT nextval('public.pedidos_id_seq'::regclass);
+
+
+--
+-- Name: postagens_feed id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.postagens_feed ALTER COLUMN id SET DEFAULT nextval('public.postagens_feed_id_seq'::regclass);
+
+
+--
+-- Name: resenhas_videos id; Type: DEFAULT; Schema: public; Owner: raposa
+--
+
 ALTER TABLE ONLY public.resenhas_videos ALTER COLUMN id SET DEFAULT nextval('public.resenhas_videos_id_seq'::regclass);
 
---
--- VISTAS / VIEWS DE COMPATIBILIDADE PARA TABELAS ALIAS
---
-CREATE OR REPLACE VIEW public.mensagens AS SELECT * FROM public.mensagens_contato;
-CREATE OR REPLACE VIEW public.fale_conosco AS SELECT * FROM public.mensagens_contato;
-CREATE OR REPLACE VIEW public.contatos AS SELECT * FROM public.mensagens_contato;
-CREATE OR REPLACE VIEW public.compras AS SELECT * FROM public.pedidos;
-CREATE OR REPLACE VIEW public.logs_sistema AS SELECT * FROM public.logs_acesso;
 
 --
--- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: raposa
+-- Name: usuarios id; Type: DEFAULT; Schema: public; Owner: raposa
 --
 
-COPY public.usuarios (id, nome, email, senha, is_admin, criado_em) FROM stdin;
-1	Administrador	admin@gmail.com	$2y$10$e0MYzXyjpJS7Pd0RVvHwHe1q9lA6n/K3d5D2oXJ1X2k8b3H1f7H4m	t	2026-10-16 08:59:09.477385
-2	Admin	admin2@gmail.com	$2y$12$WVyURMc1/u6f2jPd4yTCze81VwChwGWWTCUFyaUxa4mU4u8Pwrr2G	t	2026-10-16 13:50:30.016836
-3	Lulu Manhani	lu@gmail.com	$2y$12$2NrCy/jAFOxpSS5tl.1euOiN3t3RSmZ75ToHFldnVnsjunlarH/vq	f	2026-10-21 11:27:07.546591
+ALTER TABLE ONLY public.usuarios ALTER COLUMN id SET DEFAULT nextval('public.usuarios_id_seq'::regclass);
+
+
+--
+-- Data for Name: historico_leitura; Type: TABLE DATA; Schema: public; Owner: raposa
+--
+
+COPY public.historico_leitura (id, usuario_id, livro_nome, genero, tempo_leitura, paginas_lidas, total_paginas, progresso_pct, atualizado_em) FROM stdin;
+1	2	X-Men: Deus Ama, o Homem Mata - Volume 1	Mangás e HQs	3 dias	30	150	20	2026-10-21 11:26:18.993997
+2	3	Estilhaça-me	Fantasia	7 dias	300	450	67	2026-10-21 11:30:17.912496
 \.
+
+
+--
+-- Data for Name: itens_pedido; Type: TABLE DATA; Schema: public; Owner: raposa
+--
+
+COPY public.itens_pedido (id, pedido_id, livro_id, quantidade, preco_unitario) FROM stdin;
+1	1	19	1	54.90
+2	1	15	1	64.90
+3	2	13	1	49.90
+4	2	2	1	54.90
+\.
+
 
 --
 -- Data for Name: livros; Type: TABLE DATA; Schema: public; Owner: raposa
@@ -329,34 +591,6 @@ COPY public.livros (id, titulo, autor, editora, genero, preco, estrelas, capa_ur
 36	O Veneno da Montanha	Bianca Jung	Autoral	Fantasia	48.90	4.6	https://imgs.search.brave.com/-7yQ7f-UEMzF09Ok3lEwmScO_rYcOqkLMvMaSIcCu3c/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/YXdzbGkuY29tLmJy/LzYwMHgxMDAwLzI3/LzI3MTkyL3Byb2R1/dG8vMTYzMjI5Mzk0/LzEyMDcxMThlMjEu/anBn	0
 \.
 
---
--- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: raposa
---
-
-COPY public.pedidos (id, usuario_id, total, data_pedido, status) FROM stdin;
-1	2	119.80	2026-10-21 11:26:29.536801	Enviado
-2	3	104.80	2026-10-21 11:30:46.381991	Enviado
-\.
-
---
--- Data for Name: itens_pedido; Type: TABLE DATA; Schema: public; Owner: raposa
---
-
-COPY public.itens_pedido (id, pedido_id, livro_id, quantidade, preco_unitario) FROM stdin;
-1	1	19	1	54.90
-2	1	15	1	64.90
-3	2	13	1	49.90
-4	2	2	1	54.90
-\.
-
---
--- Data for Name: historico_leitura; Type: TABLE DATA; Schema: public; Owner: raposa
---
-
-COPY public.historico_leitura (id, usuario_id, livro_nome, genero, tempo_leitura, paginas_lidas, total_paginas, progresso_pct, atualizado_em) FROM stdin;
-1	2	X-Men: Deus Ama, o Homem Mata - Volume 1	Mangás e HQs	3 dias	30	150	20	2026-10-21 11:26:18.993997
-2	3	Estilhaça-me	Fantasia	7 dias	300	450	67	2026-10-21 11:30:17.912496
-\.
 
 --
 -- Data for Name: logs_acesso; Type: TABLE DATA; Schema: public; Owner: raposa
@@ -377,7 +611,11 @@ COPY public.logs_acesso (id, usuario_id, email_tentativa, ip_origem, sucesso, da
 12	2	admin2@gmail.com	::1	t	2026-10-21 08:57:02.516931
 13	3	lu@gmail.com	::1	t	2026-10-21 11:27:16.119459
 14	2	admin2@gmail.com	::1	t	2026-10-21 11:30:56.168096
+15	\N	admin3@gmail.com	10.87.47.98	f	2026-10-23 16:30:28.869224
+16	\N	admin3@gmail.com	10.87.47.98	f	2026-10-23 16:30:37.36256
+17	4	admin3@gmail.com	10.87.47.98	t	2026-10-23 16:38:43.975849
 \.
+
 
 --
 -- Data for Name: mensagens_contato; Type: TABLE DATA; Schema: public; Owner: raposa
@@ -386,6 +624,17 @@ COPY public.logs_acesso (id, usuario_id, email_tentativa, ip_origem, sucesso, da
 COPY public.mensagens_contato (id, usuario_id, nome, email, assunto, mensagem, resposta_admin, data_resposta, status, criado_em) FROM stdin;
 1	3	Lulu Manhani	lu@gmail.com	Elogio	O site tá muito legal!	Muito obrigado pelo carinho!	2026-10-21 11:39:00.449889	Respondida	2026-10-21 11:30:41.033613
 \.
+
+
+--
+-- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: raposa
+--
+
+COPY public.pedidos (id, usuario_id, total, data_pedido, status) FROM stdin;
+1	2	119.80	2026-10-21 11:26:29.536801	Enviado
+2	3	104.80	2026-10-21 11:30:46.381991	Enviado
+\.
+
 
 --
 -- Data for Name: postagens_feed; Type: TABLE DATA; Schema: public; Owner: raposa
@@ -400,6 +649,7 @@ COPY public.postagens_feed (id, usuario_id, livro_nome, comentario, progresso, a
 6	3	Estilhaça-me	Amando!	67	Geral	2026-10-21 11:29:38.766978
 7	3	Estilhaça-me	Atualizei meu progresso de leitura! Já li 300 de 450 páginas (67%).	67	Geral	2026-10-21 11:30:17.918414
 \.
+
 
 --
 -- Data for Name: resenhas_videos; Type: TABLE DATA; Schema: public; Owner: raposa
@@ -443,56 +693,229 @@ COPY public.resenhas_videos (id, titulo_livro, url_video, resumo) FROM stdin;
 35	Reinações de Narizinho	https://www.youtube.com/watch?v=4LzrSNi3JII	Resenha sobre o marco inicial do Sítio do Pica-Pau Amarelo por Monteiro Lobato, destacando a fantasia e o folclore.
 \.
 
+
 --
--- Sequences setval
+-- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: raposa
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_seq', 3, true);
-SELECT pg_catalog.setval('public.livros_id_seq', 36, true);
-SELECT pg_catalog.setval('public.pedidos_id_seq', 2, true);
-SELECT pg_catalog.setval('public.itens_pedido_id_seq', 4, true);
+COPY public.usuarios (id, nome, email, senha, is_admin, criado_em) FROM stdin;
+1	Administrador	admin@gmail.com	$2y$10$e0MYzXyjpJS7Pd0RVvHwHe1q9lA6n/K3d5D2oXJ1X2k8b3H1f7H4m	t	2026-10-16 08:59:09.477385
+2	Admin	admin2@gmail.com	$2y$12$WVyURMc1/u6f2jPd4yTCze81VwChwGWWTCUFyaUxa4mU4u8Pwrr2G	t	2026-10-16 13:50:30.016836
+3	Lulu Manhani	lu@gmail.com	$2y$12$2NrCy/jAFOxpSS5tl.1euOiN3t3RSmZ75ToHFldnVnsjunlarH/vq	f	2026-10-21 11:27:07.546591
+4	administrador de verdade	admin3@gmail.com	$2y$12$ZOK1G7MGR8wErnHUPqsWyuB8Pc.3rvM.TnlfFpkKZR4Y0B5Wp4Tqu	t	2026-10-23 16:36:40.273773
+\.
+
+
+--
+-- Name: historico_leitura_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
 SELECT pg_catalog.setval('public.historico_leitura_id_seq', 2, true);
-SELECT pg_catalog.setval('public.logs_acesso_id_seq', 14, true);
+
+
+--
+-- Name: itens_pedido_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
+SELECT pg_catalog.setval('public.itens_pedido_id_seq', 4, true);
+
+
+--
+-- Name: livros_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
+SELECT pg_catalog.setval('public.livros_id_seq', 36, true);
+
+
+--
+-- Name: logs_acesso_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
+SELECT pg_catalog.setval('public.logs_acesso_id_seq', 17, true);
+
+
+--
+-- Name: mensagens_contato_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
 SELECT pg_catalog.setval('public.mensagens_contato_id_seq', 1, true);
+
+
+--
+-- Name: pedidos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
+SELECT pg_catalog.setval('public.pedidos_id_seq', 2, true);
+
+
+--
+-- Name: postagens_feed_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
 SELECT pg_catalog.setval('public.postagens_feed_id_seq', 7, true);
+
+
+--
+-- Name: resenhas_videos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
+--
+
 SELECT pg_catalog.setval('public.resenhas_videos_id_seq', 35, true);
 
---
--- Constraints & Keys
---
-
-ALTER TABLE ONLY public.usuarios ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id);
-ALTER TABLE ONLY public.usuarios ADD CONSTRAINT usuarios_email_key UNIQUE (email);
-
-ALTER TABLE ONLY public.livros ADD CONSTRAINT livros_pkey PRIMARY KEY (id);
-ALTER TABLE ONLY public.livros ADD CONSTRAINT livros_titulo_key UNIQUE (titulo);
-
-ALTER TABLE ONLY public.pedidos ADD CONSTRAINT pedidos_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.itens_pedido ADD CONSTRAINT itens_pedido_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.historico_leitura ADD CONSTRAINT historico_leitura_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.logs_acesso ADD CONSTRAINT logs_acesso_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.mensagens_contato ADD CONSTRAINT mensagens_contato_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.postagens_feed ADD CONSTRAINT postagens_feed_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.resenhas_videos ADD CONSTRAINT resenhas_videos_pkey PRIMARY KEY (id);
 
 --
--- Foreign Keys
+-- Name: usuarios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: raposa
 --
 
-ALTER TABLE ONLY public.pedidos ADD CONSTRAINT pedidos_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
-ALTER TABLE ONLY public.itens_pedido ADD CONSTRAINT itens_pedido_pedido_id_fkey FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id) ON DELETE CASCADE;
-ALTER TABLE ONLY public.itens_pedido ADD CONSTRAINT itens_pedido_livro_id_fkey FOREIGN KEY (livro_id) REFERENCES public.livros(id) ON DELETE SET NULL;
-ALTER TABLE ONLY public.historico_leitura ADD CONSTRAINT historico_leitura_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
-ALTER TABLE ONLY public.logs_acesso ADD CONSTRAINT logs_acesso_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
-ALTER TABLE ONLY public.mensagens_contato ADD CONSTRAINT mensagens_contato_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE SET NULL;
-ALTER TABLE ONLY public.postagens_feed ADD CONSTRAINT postagens_feed_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+SELECT pg_catalog.setval('public.usuarios_id_seq', 4, true);
+
+
+--
+-- Name: historico_leitura historico_leitura_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.historico_leitura
+    ADD CONSTRAINT historico_leitura_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: itens_pedido itens_pedido_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.itens_pedido
+    ADD CONSTRAINT itens_pedido_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: livros livros_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.livros
+    ADD CONSTRAINT livros_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: livros livros_titulo_key; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.livros
+    ADD CONSTRAINT livros_titulo_key UNIQUE (titulo);
+
+
+--
+-- Name: logs_acesso logs_acesso_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.logs_acesso
+    ADD CONSTRAINT logs_acesso_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mensagens_contato mensagens_contato_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.mensagens_contato
+    ADD CONSTRAINT mensagens_contato_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pedidos pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.pedidos
+    ADD CONSTRAINT pedidos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: postagens_feed postagens_feed_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.postagens_feed
+    ADD CONSTRAINT postagens_feed_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: resenhas_videos resenhas_videos_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.resenhas_videos
+    ADD CONSTRAINT resenhas_videos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: usuarios usuarios_email_key; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT usuarios_email_key UNIQUE (email);
+
+
+--
+-- Name: usuarios usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: historico_leitura historico_leitura_usuario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.historico_leitura
+    ADD CONSTRAINT historico_leitura_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: itens_pedido itens_pedido_livro_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.itens_pedido
+    ADD CONSTRAINT itens_pedido_livro_id_fkey FOREIGN KEY (livro_id) REFERENCES public.livros(id) ON DELETE SET NULL;
+
+
+--
+-- Name: itens_pedido itens_pedido_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.itens_pedido
+    ADD CONSTRAINT itens_pedido_pedido_id_fkey FOREIGN KEY (pedido_id) REFERENCES public.pedidos(id) ON DELETE CASCADE;
+
+
+--
+-- Name: logs_acesso logs_acesso_usuario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.logs_acesso
+    ADD CONSTRAINT logs_acesso_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mensagens_contato mensagens_contato_usuario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.mensagens_contato
+    ADD CONSTRAINT mensagens_contato_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE SET NULL;
+
+
+--
+-- Name: pedidos pedidos_usuario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.pedidos
+    ADD CONSTRAINT pedidos_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: postagens_feed postagens_feed_usuario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: raposa
+--
+
+ALTER TABLE ONLY public.postagens_feed
+    ADD CONSTRAINT postagens_feed_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
 
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict 7AbzkNatgBXUYVK84uEEIUajXJYEhkRfbRC4FV8qlT9raQWKhYbDW8nrdsyxN08
+
