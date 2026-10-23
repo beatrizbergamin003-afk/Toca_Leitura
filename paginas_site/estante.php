@@ -1,4 +1,9 @@
 
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL); 
+?>
 <?php 
 // Carrega a conexão com o banco de dados e as configurações do sistema
 require_once __DIR__ . '/../config/db.php';
@@ -66,14 +71,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Validação 3: Gênero Permitido
+            // Validação 3: Gênero Permitido (utilizando laço seguro sem mb_strtolower)
             if (function_exists('validar_genero')) {
                 if (!validar_genero($genero)) {
                     throw new Exception("Gênero inválido! Selecione uma opção disponível na lista.");
                 }
             } else {
-                $generos_validos_lower = array_map('mb_strtolower', $generos_validos);
-                if (!in_array(mb_strtolower($genero), $generos_validos_lower, true)) {
+                $generos_validos_lower = [];
+                foreach ($generos_validos as $item) {
+                    $generos_validos_lower[] = strtolower((string)$item);
+                }
+                
+                $genero_input_lower = strtolower((string)$genero);
+
+                if (!in_array($genero_input_lower, $generos_validos_lower, true)) {
                     throw new Exception("Gênero inválido! Selecione uma opção disponível na lista.");
                 }
             }
@@ -364,3 +375,4 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Carrega o rodapé do site -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+
