@@ -200,7 +200,7 @@ Para interromper o servidor, pressione `Ctrl + C` no terminal.
 
 ```text
 projetointegrador_tocaleitura
-├── .gitignore
+|
 ├── dump_tocaLeitura.sql
 ├── README.md
 ├── config

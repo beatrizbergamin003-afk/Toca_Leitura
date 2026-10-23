@@ -1,202 +1,254 @@
-
 <?php
-// Carrega a conexão com o banco de dados e as funções do sistema
+// 1. Ativa a exibição de erros na tela para depuração e evita tela branca silenciosa
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// 2. Conecta ao banco de dados e carrega as configurações do sistema
 require_once __DIR__ . '/../config/db.php';
 
-// Se a rota BASE_URL ainda não tiver sido criada no db.php, estabelece o caminho padrão
+// Define a rota base padrão do site caso não exista
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
-// Bloqueio de segurança: restringe esta tela apenas para contas de administradores
+// 3. Trava de segurança: impede o acesso de leitores comuns e libera apenas para administradores
 if (function_exists('verificar_admin')) {
     verificar_admin();
 } else {
-    iniciar_sessao();
-    // Se a sessão não for de administrador, manda o usuário para a página inicial
+    if (function_exists('iniciar_sessao')) {
+        iniciar_sessao();
+    } elseif (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
     if (empty($_SESSION['is_admin'])) {
         header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
 
-// Variáveis para mensagens de feedback e captura do ID do admin logado
-$mensagem       = '';
-$erro           = '';
-$admin_atual_id = (int)($_SESSION['usuario_id'] ?? 0);
+// Variáveis de feedback para o administrador
+$mensagem = '';
+$erro     = '';
 
-// Captura mensagens enviadas via URL (ex: após redirecionar de exclusão)
-if (isset($_GET['sucesso']) && $_GET['sucesso'] === 'usuario_deletado') {
-    $mensagem = "Usuário excluído com sucesso!";
+// 4. LÓGICA DE AÇÕES (Excluir mensagem ou alterar status)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
+    $acao   = $_POST['acao'];
+    $msg_id = (int)($_POST['msg_id'] ?? 0);
+
+    if ($msg_id > 0) {
+        try {
+            if ($acao === 'excluir_mensagem') {
+                // Tenta remover nas tabelas possíveis
+                $deletado = false;
+                foreach (['mensagens', 'fale_conosco', 'contatos', 'mensagens_contato'] as $tab) {
+                    try {
+                        $stmt_del = $pdo->prepare("DELETE FROM {$tab} WHERE id = ?");
+                        $stmt_del->execute([$msg_id]);
+                        if ($stmt_del->rowCount() > 0) {
+                            $deletado = true;
+                            break;
+                        }
+                    } catch (PDOException $ex) {
+                        continue;
+                    }
+                }
+                $mensagem = "Mensagem #{$msg_id} removida com sucesso!";
+            } elseif ($acao === 'marcar_lida') {
+                foreach (['mensagens', 'fale_conosco', 'contatos', 'mensagens_contato'] as $tab) {
+                    try {
+                        $stmt_up = $pdo->prepare("UPDATE {$tab} SET status = 'Lida' WHERE id = ?");
+                        $stmt_up->execute([$msg_id]);
+                    } catch (PDOException $ex) {
+                        continue;
+                    }
+                }
+                $mensagem = "Status da mensagem #{$msg_id} atualizado!";
+            }
+        } catch (Exception $e) {
+            $erro = "Erro ao processar ação: " . $e->getMessage();
+        }
+    }
 }
 
-// PROCESSAMENTO DE AÇÕES: Executa quando o admin altera um cargo ou exclui um usuário
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $target_id = (int)($_POST['usuario_id'] ?? 0);
-    $acao      = $_POST['acao'] ?? '';
+// 5. CONSULTA DE MENSAGENS / ATENDIMENTO AO LEITOR NO BANCO DE DADOS
+$mensagens = [];
+$has_table = false;
 
-    if ($target_id > 0) {
-        // Regra de segurança: impede que o administrador modifique ou apague a sua própria conta ativa
-        if ($target_id === $admin_atual_id) {
-            $erro = "Você não pode alterar as permissões ou deletar a sua própria conta ativa!";
-        } else {
-            // 1. ALTERAR CARGO (Inverte o status entre Administrador e Leitor)
-            if ($acao === 'toggle_admin' || $acao === 'alternar_admin') {
-                try {
-                    // O comando 'NOT is_admin' inverte o valor booleano no banco (se for true vira false e vice-versa)
-                    $stmt = $pdo->prepare("UPDATE usuarios SET is_admin = NOT is_admin WHERE id = ?");
-                    $stmt->execute([$target_id]);
-                    $mensagem = "Permissão do usuário #{$target_id} atualizada com sucesso!";
-                } catch (PDOException $e) {
-                    $erro = "Erro ao atualizar as permissões do usuário.";
-                }
-            } 
-            // 2. EXCLUIR USUÁRIO
-            elseif ($acao === 'deletar') {
-                try {
-                    // Limpeza em cascata manual: remove histórico, posts e estante antes de deletar a conta para evitar erro de chave estrangeira
-                    try { $pdo->prepare("DELETE FROM historico_leitura WHERE usuario_id = ?")->execute([$target_id]); } catch (PDOException $ex) {}
-                    try { $pdo->prepare("DELETE FROM postagens_feed WHERE usuario_id = ?")->execute([$target_id]); } catch (PDOException $ex) {}
-                    try { $pdo->prepare("DELETE FROM estante_usuario WHERE usuario_id = ?")->execute([$target_id]); } catch (PDOException $ex) {}
-
-                    // Após limpar os vínculos, apaga a conta do usuário da tabela principal
-                    $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = ?");
-                    $stmt->execute([$target_id]);
-                    $mensagem = "Usuário #{$target_id} excluído com sucesso!";
-                } catch (PDOException $e) {
-                    $erro = "Erro ao excluir o usuário do banco de dados.";
-                }
+if (isset($pdo)) {
+    // Busca em cascata nas tabelas que costumam guardar mensagens de contato
+    $tabelas = ['mensagens', 'fale_conosco', 'contatos', 'mensagens_contato'];
+    
+    foreach ($tabelas as $tabela) {
+        try {
+            $sql = "SELECT m.*, u.nome AS usuario_nome, u.email AS usuario_email
+                    FROM {$tabela} m 
+                    LEFT JOIN usuarios u ON m.usuario_id = u.id 
+                    ORDER BY m.id DESC";
+            $stmt = $pdo->query($sql);
+            $mensagens = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $has_table = true;
+            break;
+        } catch (PDOException $e) {
+            // Tenta consulta direta caso não haja relacionamento com usuario_id
+            try {
+                $sql = "SELECT * FROM {$tabela} ORDER BY id DESC";
+                $stmt = $pdo->query($sql);
+                $mensagens = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $has_table = true;
+                break;
+            } catch (PDOException $ex) {
+                continue;
             }
         }
     }
 }
 
-// CONSULTA DE USUÁRIOS: Busca todos os cadastros no banco do mais recente para o mais antigo
-$usuarios = [];
-try {
-    $stmt = $pdo->query("SELECT id, nome, email, is_admin, criado_em FROM usuarios ORDER BY id DESC");
-    $usuarios = $stmt->fetchAll();
-} catch (PDOException $e) {
-    $erro = "Erro ao carregar a lista de usuários.";
-}
-
-// Inclui o topo e o menu visual da página
+// Carrega o topo visual e o menu de navegação do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- ÁREA PRINCIPAL DO PAINEL DE GERENCIAMENTO DE USUÁRIOS -->
-<main class="page-admin-usuarios-bg">
+<!-- ÁREA PRINCIPAL DO PAINEL DE ATENDIMENTO AO LEITOR -->
+<main class="page-admin-bg" style="padding: 30px 15px;">
 
-    <section class="admin-usuarios-container">
+    <section class="admin-container" style="max-width: 1100px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
         
-        <!-- Título da tela e explicação -->
+        <!-- CABEÇALHO DO PAINEL -->
         <div style="margin-bottom: 25px;">
-            <h2 style="font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
-                 Gerenciamento de Usuários
+            <h2 style="font-size: 24px; font-weight: 800; color: #2E1065; margin-bottom: 6px;">
+                Painel de Atendimento ao Leitor
             </h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin: 0;">
-                Gerencie as contas cadastradas, altere permissões de administradores e controle acessos à Toca de Leitura.
+            <p style="color: #6B21A8; font-size: 14px; margin: 0;">
+                Gerencie dúvidas, mensagens de suporte e envie respostas diretas aos leitores da Toca de Leitura.
             </p>
         </div>
 
-        <!-- Alerta verde para confirmações de ações com sucesso -->
+        <!-- MENSAGEM DE SUCESSO -->
         <?php if (!empty($mensagem)): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                 <?= htmlspecialchars($mensagem); ?>
+                <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
-        <!-- Alerta amarelo para bloqueios ou erros no banco -->
+        <!-- MENSAGEM DE ERRO -->
         <?php if (!empty($erro)): ?>
-            <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                 <?= htmlspecialchars($erro); ?>
+            <div style="background-color: #FEE2E2; color: #991B1B; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCA5A5; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
+                <?= htmlspecialchars($erro); ?>
             </div>
         <?php endif; ?>
 
-        <!-- TABELA QUE LISTA OS USUÁRIOS SISTEMA -->
-        <?php if (!empty($usuarios)): ?>
+        <!-- AVISO CASO A TABELA NÃO EXISTA NO BANCO -->
+        <?php if (!$has_table): ?>
+            <div style="background-color: #FEF3C7; color: #B45309; padding: 16px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-size: 14px;">
+                <strong>Aviso:</strong> A tabela de mensagens (<code>mensagens</code> ou <code>fale_conosco</code>) ainda não foi criada no banco de dados local.
+            </div>
+        <?php endif; ?>
+
+        <!-- TABELA DE MENSAGENS -->
+        <?php if (!empty($mensagens)): ?>
             <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; background-color: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--border-soft);">
+                <table style="width: 100%; border-collapse: collapse; background-color: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1.5px solid #E9D5FF; text-align: left;">
                     <thead>
-                        <tr style="background-color: #FAF5FF; color: var(--text-dark); border-bottom: 1.5px solid var(--border-soft); font-size: 14px; text-align: left;">
+                        <tr style="background-color: #F3E8FF; color: #2E1065; font-size: 14px; text-transform: uppercase;">
                             <th style="padding: 12px;">ID</th>
-                            <th style="padding: 12px;">Nome de Usuário</th>
-                            <th style="padding: 12px;">E-mail</th>
-                            <th style="padding: 12px;">Perfil</th>
-                            <th style="padding: 12px;">Data de Cadastro</th>
-                            <th style="padding: 12px; text-align: center;">Ações</th>
+                            <th style="padding: 12px;">LEITOR / REMETENTE</th>
+                            <th style="padding: 12px;">E-MAIL / CONTATO</th>
+                            <th style="padding: 12px;">ASSUNTO & MENSAGEM</th>
+                            <th style="padding: 12px;">DATA</th>
+                            <th style="padding: 12px;">STATUS</th>
+                            <th style="padding: 12px; text-align: center;">AÇÕES</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Loop que percorre cada conta vinda do banco e desenha a linha correspondente -->
-                        <?php foreach ($usuarios as $u): 
-                            $is_user_admin  = !empty($u['is_admin']);
-                            $is_self        = ((int)$u['id'] === $admin_atual_id);
-                            
-                            // Ajusta acentuação UTF-8 no nome e no e-mail do usuário
-                            $nome_user_raw  = $u['nome'] ?? '';
-                            $nome_user      = mb_convert_encoding($nome_user_raw, 'UTF-8', 'ISO-8859-1');
+                        <?php foreach ($mensagens as $m): 
+                            $m_id = $m['id'];
 
-                            $email_user_raw = $u['email'] ?? '';
-                            $email_user     = mb_convert_encoding($email_user_raw, 'UTF-8', 'ISO-8859-1');
+                            // Tratamento de codificação sem depender do mbstring
+                            $nome_raw = $m['nome'] ?? $m['usuario_nome'] ?? $m['remetente'] ?? 'Leitor Anônimo';
+                            $nome     = function_exists('fix_utf8') ? fix_utf8($nome_raw) : $nome_raw;
 
-                            // Formata a data de cadastro para o padrão brasileiro
-                            $raw_date       = $u['criado_em'] ?? null;
-                            $data_cadastro  = $raw_date ? date('d/m/Y \à\s H:i', strtotime($raw_date)) : 'Recente';
+                            $email_raw = $m['email'] ?? $m['usuario_email'] ?? '—';
+                            $email     = function_exists('fix_utf8') ? fix_utf8($email_raw) : $email_raw;
+
+                            $assunto_raw = $m['assunto'] ?? 'Dúvida / Atendimento';
+                            $assunto     = function_exists('fix_utf8') ? fix_utf8($assunto_raw) : $assunto_raw;
+
+                            $conteudo_raw = $m['mensagem'] ?? $m['conteudo'] ?? $m['texto'] ?? '';
+                            $conteudo     = function_exists('fix_utf8') ? fix_utf8($conteudo_raw) : $conteudo_raw;
+
+                            $status_raw = $m['status'] ?? 'Pendente';
+                            $status     = function_exists('fix_utf8') ? fix_utf8($status_raw) : $status_raw;
+
+                            // Formatação de data
+                            $raw_date = $m['data_envio'] ?? $m['criado_em'] ?? $m['created_at'] ?? $m['data'] ?? null;
+                            $data_fmt = $raw_date ? date('d/m/Y \à\s H:i', strtotime($raw_date)) : 'Recente';
+
+                            // Cores de status
+                            $st_lower = strtolower((string)$status);
+                            if (in_array($st_lower, ['lida', 'respondida', 'concluido'])) {
+                                $bg_badge  = '#DCFCE7';
+                                $cor_badge = '#15803D';
+                            } else {
+                                $bg_badge  = '#FEF3C7';
+                                $cor_badge = '#B45309';
+                            }
                         ?>
-                            <tr style="border-bottom: 1px solid var(--border-soft); font-size: 13px;">
-                                <td style="padding: 10px 12px; font-weight: 800; color: var(--text-muted);">#<?= $u['id']; ?></td>
-                                <td style="padding: 10px 12px; font-weight: 800; color: var(--text-dark);">
-                                     <?= htmlspecialchars($nome_user); ?>
-                                    <!-- Identifica a própria conta do admin na lista -->
-                                    <?php if ($is_self): ?>
-                                        <span style="font-size: 11px; color: var(--fox-purple); font-weight: 800; margin-left: 4px;">(Você)</span>
-                                    <?php endif; ?>
+                            <tr style="border-bottom: 1px solid #F3E8FF; font-size: 13px;">
+                                <td style="padding: 12px; font-weight: 800; color: #6B21A8;">
+                                    #<?= htmlspecialchars($m_id); ?>
                                 </td>
-                                <td style="padding: 10px 12px; color: var(--text-dark);">
-                                    <?= htmlspecialchars($email_user); ?>
+                                <td style="padding: 12px; font-weight: 800; color: #2E1065;">
+                                    <?= htmlspecialchars($nome); ?>
                                 </td>
-                                <td style="padding: 10px 12px;">
-                                    <!-- Badges para destacar visualmente Administradores e Leitores -->
-                                    <?php if ($is_user_admin): ?>
-                                        <span style="background-color: #E9D5FF; color: #5B21B6; font-weight: 800; padding: 4px 10px; border-radius: 12px; font-size: 11px;">
-                                             Administrador
-                                        </span>
-                                    <?php else: ?>
-                                        <span style="background-color: #FAF5FF; color: var(--text-muted); font-weight: 800; padding: 4px 10px; border-radius: 12px; font-size: 11px; border: 1px solid var(--border-soft);">
-                                             Leitor
-                                        </span>
-                                    <?php endif; ?>
+                                <td style="padding: 12px; color: #2E1065;">
+                                    <a href="mailto:<?= htmlspecialchars($email); ?>" style="color: #7C3AED; text-decoration: none; font-weight: 700;">
+                                        <?= htmlspecialchars($email); ?>
+                                    </a>
                                 </td>
-                                <td style="padding: 10px 12px; font-weight: 700; color: var(--text-muted); font-size: 12px;">
-                                     <?= $data_cadastro; ?>
+                                <td style="padding: 12px; max-width: 320px;">
+                                    <strong style="color: #2E1065; display: block; margin-bottom: 4px;"><?= htmlspecialchars($assunto); ?></strong>
+                                    <span style="color: #4C1D95; font-size: 12px; display: block; line-height: 1.4;">
+                                        <?= nl2br(htmlspecialchars($conteudo)); ?>
+                                    </span>
                                 </td>
-                                <td style="padding: 10px 12px; text-align: center;">
-                                    <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+                                <td style="padding: 12px; color: #666; font-size: 12px;">
+                                    <?= htmlspecialchars($data_fmt); ?>
+                                </td>
+                                <td style="padding: 12px;">
+                                    <span style="background-color: <?= $bg_badge; ?>; color: <?= $cor_badge; ?>; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 11px; display: inline-block;">
+                                        <?= htmlspecialchars($status); ?>
+                                    </span>
+                                </td>
+                                <td style="padding: 12px; text-align: center;">
+                                    <div style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap;">
                                         
-                                        <!-- Só exibe os botões de alterar permissão e excluir se não for a própria conta ativa -->
-                                        <?php if (!$is_self): ?>
-                                            <!-- FORMULÁRIO PARA TROCAR CARGO (ADMIN / LEITOR) -->
-                                            <form action="<?= BASE_URL; ?>admin_usuarios.php" method="POST" style="display: inline;">
-                                                <input type="hidden" name="acao" value="toggle_admin">
-                                                <input type="hidden" name="usuario_id" value="<?= $u['id']; ?>">
-                                                <button type="submit" style="background: none; border: none; color: var(--fox-purple); font-size: 12px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
-                                                    <?= $is_user_admin ? ' Tornar Leitor' : ' Tornar Admin'; ?>
-                                                </button>
-                                            </form>
-
-                                            <!-- FORMULÁRIO PARA EXCLUIR USUÁRIO DO BANCO -->
-                                            <form action="<?= BASE_URL; ?>admin_usuarios.php" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir permanentemente este usuário?');">
-                                                <input type="hidden" name="acao" value="deletar">
-                                                <input type="hidden" name="usuario_id" value="<?= $u['id']; ?>">
-                                                <button type="submit" style="background: none; border: none; color: var(--apple-red); font-size: 12px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
-                                                     Excluir
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
-                                            <!-- Texto indicativo para o próprio usuário logado -->
-                                            <span style="font-size: 12px; color: var(--text-muted); font-style: italic;">(Sua conta ativa)</span>
+                                        <!-- BOTÃO DE RESPONDER VIA E-MAIL -->
+                                        <?php if ($email !== '—'): ?>
+                                            <a href="mailto:<?= htmlspecialchars($email); ?>?subject=Re: <?= urlencode($assunto); ?>" style="background-color: #7C3AED; color: #ffffff; text-decoration: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;">
+                                                Responder
+                                            </a>
                                         <?php endif; ?>
+
+                                        <!-- MARCAR COMO LIDA -->
+                                        <?php if ($st_lower !== 'lida'): ?>
+                                            <form action="admin_mensagens.php" method="POST" style="margin: 0;">
+                                                <input type="hidden" name="acao" value="marcar_lida">
+                                                <input type="hidden" name="msg_id" value="<?= $m_id; ?>">
+                                                <button type="submit" style="background-color: #10B981; color: #ffffff; border: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                                                    Lida
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+
+                                        <!-- EXCLUIR MENSAGEM -->
+                                        <form action="admin_mensagens.php" method="POST" style="margin: 0;" onsubmit="return confirm('Deseja realmente apagar esta mensagem?');">
+                                            <input type="hidden" name="acao" value="excluir_mensagem">
+                                            <input type="hidden" name="msg_id" value="<?= $m_id; ?>">
+                                            <button type="submit" style="background-color: #EF4444; color: #ffffff; border: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                                                Excluir
+                                            </button>
+                                        </form>
 
                                     </div>
                                 </td>
@@ -205,22 +257,23 @@ require_once __DIR__ . '/../includes/header.php';
                     </tbody>
                 </table>
             </div>
-        <?php else: ?>
-            <!-- Mensagem caso a tabela de usuários do banco esteja sem registros -->
-            <div style="text-align: center; padding: 40px 20px; background-color: #FAF5FF; border: 1.5px dashed var(--border-soft); border-radius: 12px; color: var(--text-muted);">
-                <p style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Nenhum usuário encontrado no sistema.</p>
+
+        <!-- MENSAGEM QUANDO A TABELA EXISTE MAS ESTÁ VAZIA -->
+        <?php elseif ($has_table): ?>
+            <div style="text-align: center; padding: 40px 20px; background-color: #FAF5FF; border: 1.5px dashed #E9D5FF; border-radius: 12px; color: #6B21A8;">
+                <p style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Nenhuma mensagem recebida no momento.</p>
+                <p style="font-size: 13px; margin: 0;">As dúvidas enviadas pelos leitores na tela "Contate-nos" serão exibidas nesta área.</p>
             </div>
         <?php endif; ?>
 
-        <!-- Link para retornar ao menu principal do painel do administrador -->
-        <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
-            <a href="<?= BASE_URL; ?>admin.php">← Voltar ao Painel do Administrador</a>
+        <!-- LINK DE RETORNO -->
+        <div style="margin-top: 25px; text-align: left;">
+            <a href="<?= BASE_URL; ?>admin.php" style="color: #7C3AED; font-weight: 800; text-decoration: none;">← Voltar ao Painel do Administrador</a>
         </div>
 
     </section>
 
 </main>
 
-<!-- Carrega o rodapé do site -->
+<!-- RODAPÉ DO SITE -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-

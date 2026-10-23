@@ -22,9 +22,9 @@ $mensagem_erro = '';
 // Define qual aba do feed comunitário está ativa (por padrão carrega a aba 'Geral')
 $aba = $_GET['aba'] ?? 'Geral';
 
-// ============================================================
+
 // CRIAR PUBLICAÇÃO (CREATE): Processa o envio do novo post via POST
-// ============================================================
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['novo_post'])) {
     $livro_nome    = trim($_POST['livro_nome'] ?? '');
     $comentario    = trim($_POST['comentario'] ?? '');
@@ -75,9 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['novo_post'])) {
     }
 }
 
-// ============================================================
+
 // EXCLUIR PUBLICAÇÃO (DELETE): Permite apagar apenas os posts da própria conta
-// ============================================================
+
 if (isset($_GET['deletar_post'])) {
     $post_id = (int)$_GET['deletar_post'];
     // Garante na cláusula WHERE que o post pertence ao leitor logado (evita que um usuário apague o post de outro)
@@ -88,9 +88,9 @@ if (isset($_GET['deletar_post'])) {
     exit;
 }
 
-// ============================================================
+
 // LER PUBLICAÇÕES (READ): Une o post com o autor e a capa do livro
-// ============================================================
+
 if ($aba === 'Minhas') {
     // Busca apenas as publicações do leitor atual
     $stmt_feed = $pdo->prepare("

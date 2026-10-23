@@ -37,9 +37,9 @@ $generos_validos = defined('GENEROS_VALIDOS') ? GENEROS_VALIDOS : [
     'Outro'
 ];
 
-// ============================================================
+
 // PROCESSAMENTO DAS AÇÕES NA TABELA: historico_leitura
-// ============================================================
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
 
@@ -144,9 +144,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ============================================================
+
 // CONSULTAR REGISTROS DA TABELA historico_leitura
-// ============================================================
+
 // Busca todas as leituras cadastradas para o usuário logado, do mais recente para o mais antigo
 $stmt = $pdo->prepare("SELECT * FROM historico_leitura WHERE usuario_id = ? ORDER BY atualizado_em DESC");
 $stmt->execute([$usuario_id]);

@@ -1,286 +1,264 @@
 
 <?php
-// Carrega o banco de dados e as funções gerais da plataforma
+// 1. Ativa a exibição de erros na tela para depuração e evita tela branca silenciosa
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// 2. Conecta ao banco de dados e carrega as configurações do sistema
 require_once __DIR__ . '/../config/db.php';
 
-// Se a rota BASE_URL não tiver sido criada no db.php, define o caminho padrão
+// Define a rota base padrão do site caso não exista
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
-// Bloqueio de segurança: restringe esta tela apenas a contas de administradores
+// 3. Trava de segurança: impede o acesso de leitores comuns e libera apenas para administradores
 if (function_exists('verificar_admin')) {
     verificar_admin();
 } else {
-    iniciar_sessao();
-    // Se a sessão não for de admin, manda de volta para a página principal
+    if (function_exists('iniciar_sessao')) {
+        iniciar_sessao();
+    } elseif (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
     if (empty($_SESSION['is_admin'])) {
         header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
 
-// Variáveis para guardar mensagens de sucesso ou alerta de erro
-$mensagem_sucesso = '';
-$erro = '';
+// Variáveis de feedback para o administrador
+$mensagem = '';
+$erro     = '';
 
-// PROCESSAMENTO DE AÇÕES: Executa quando o admin envia o formulário (responder ou excluir)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $acao   = $_POST['acao'] ?? '';
-    $msg_id = (int)($_POST['mensagem_id'] ?? 0);
+// 4. LÓGICA DE AÇÕES (Excluir mensagem)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
+    $acao   = $_POST['acao'];
+    $msg_id = (int)($_POST['msg_id'] ?? 0);
 
-    // 1. AÇÃO: RESPONDER A UMA MENSAGEM DO LEITOR
-    if ($acao === 'responder' && $msg_id > 0) {
-        $resposta = trim($_POST['resposta_admin'] ?? '');
-
-        if (!empty($resposta)) {
-            try {
-                // Grava a resposta, registra a data/hora atual e atualiza o status para 'Respondida'
-                $stmt = $pdo->prepare("
-                    UPDATE mensagens_contato 
-                    SET resposta_admin = ?, data_resposta = CURRENT_TIMESTAMP, status = 'Respondida' 
-                    WHERE id = ?
-                ");
-                if ($stmt->execute([$resposta, $msg_id])) {
-                    $mensagem_sucesso = "Resposta registrada e enviada ao leitor com sucesso!";
-                } else {
-                    $erro = "Não foi possível salvar a resposta.";
-                }
-            } catch (PDOException $e) {
-                // Plano B: tenta atualizar na tabela alternativa 'mensagens' se a principal não existir
-                try {
-                    $stmt = $pdo->prepare("
-                        UPDATE mensagens 
-                        SET resposta_admin = ?, data_resposta = CURRENT_TIMESTAMP, status = 'Respondida' 
-                        WHERE id = ?
-                    ");
-                    $stmt->execute([$resposta, $msg_id]);
-                    $mensagem_sucesso = "Resposta registrada com sucesso!";
-                } catch (PDOException $ex) {
-                    $erro = "Erro ao salvar a resposta no banco de dados.";
-                }
-            }
-        } else {
-            $erro = "Por favor, digite uma resposta antes de enviar.";
-        }
-    }
-
-    // 2. AÇÃO: EXCLUIR MENSAGEM DO BANCO
-    if ($acao === 'excluir' && $msg_id > 0) {
+    if ($msg_id > 0) {
         try {
-            // Apaga o registro da tabela principal 'mensagens_contato'
-            $stmt = $pdo->prepare("DELETE FROM mensagens_contato WHERE id = ?");
-            if ($stmt->execute([$msg_id])) {
-                $mensagem_sucesso = "Mensagem #{$msg_id} excluída com sucesso!";
-            } else {
-                $erro = "Erro ao excluir a mensagem.";
+            if ($acao === 'excluir_mensagem') {
+                // Tenta remover nas tabelas possíveis
+                $deletado = false;
+                foreach (['mensagens', 'fale_conosco', 'contatos', 'mensagens_contato'] as $tab) {
+                    try {
+                        $stmt_del = $pdo->prepare("DELETE FROM {$tab} WHERE id = ?");
+                        $stmt_del->execute([$msg_id]);
+                        if ($stmt_del->rowCount() > 0) {
+                            $deletado = true;
+                            break;
+                        }
+                    } catch (PDOException $ex) {
+                        continue;
+                    }
+                }
+                $mensagem = "Mensagem #{$msg_id} removida com sucesso!";
             }
+        } catch (Exception $e) {
+            $erro = "Erro ao processar ação: " . $e->getMessage();
+        }
+    }
+}
+
+// 5. CONSULTA DE MENSAGENS / ATENDIMENTO AO LEITOR NO BANCO DE DADOS
+$mensagens = [];
+$has_table = false;
+
+if (isset($pdo)) {
+    // Busca em cascata nas tabelas que costumam guardar mensagens de contato
+    $tabelas = ['mensagens', 'fale_conosco', 'contatos', 'mensagens_contato'];
+    
+    foreach ($tabelas as $tabela) {
+        try {
+            $sql = "SELECT m.*, u.nome AS usuario_nome, u.email AS usuario_email
+                    FROM {$tabela} m 
+                    LEFT JOIN usuarios u ON m.usuario_id = u.id 
+                    ORDER BY m.id DESC";
+            $stmt = $pdo->query($sql);
+            $mensagens = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $has_table = true;
+            break;
         } catch (PDOException $e) {
-            // Plano B: tenta apagar da tabela alternativa 'mensagens'
+            // Tenta consulta direta caso não haja relacionamento com usuario_id
             try {
-                $stmt = $pdo->prepare("DELETE FROM mensagens WHERE id = ?");
-                $stmt->execute([$msg_id]);
-                $mensagem_sucesso = "Mensagem #{$msg_id} excluída com sucesso!";
+                $sql = "SELECT * FROM {$tabela} ORDER BY id DESC";
+                $stmt = $pdo->query($sql);
+                $mensagens = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $has_table = true;
+                break;
             } catch (PDOException $ex) {
-                $erro = "Erro ao excluir a mensagem do banco de dados.";
+                continue;
             }
         }
     }
 }
 
-// CONSULTA AO BANCO: Busca todas as mensagens recebidas e faz LEFT JOIN para pegar o nome caso seja usuário logado
-$mensagens = [];
-$has_mensagens_table = true;
-
-try {
-    $sql = "SELECT m.*, u.nome AS nome_usuario 
-            FROM mensagens_contato m
-            LEFT JOIN usuarios u ON m.usuario_id = u.id
-            ORDER BY m.id DESC";
-    $mensagens = $pdo->query($sql)->fetchAll();
-} catch (PDOException $e) {
-    // Plano B: busca na tabela 'mensagens' se a 'mensagens_contato' não for encontrada
-    try {
-        $sql = "SELECT m.*, u.nome AS nome_usuario 
-                FROM mensagens m
-                LEFT JOIN usuarios u ON m.usuario_id = u.id
-                ORDER BY m.id DESC";
-        $mensagens = $pdo->query($sql)->fetchAll();
-    } catch (PDOException $ex) {
-        // Se nenhuma das duas tabelas existir, ativa o aviso de estrutura ausente
-        $has_mensagens_table = false;
-    }
-}
-
-// Inclui o cabeçalho visual da página
+// Carrega o topo visual e o menu de navegação do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- ÁREA PRINCIPAL DA PÁGINA -->
-<main class="page-admin-mensagens-bg">
+<!-- ÁREA PRINCIPAL DO PAINEL DE ATENDIMENTO AO LEITOR -->
+<main class="page-admin-bg" style="padding: 30px 15px;">
 
-    <section class="admin-mensagens-container">
+    <section class="admin-container" style="max-width: 1100px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
         
-        <!-- Título do Painel de Atendimento -->
+        <!-- CABEÇALHO DO PAINEL -->
         <div style="margin-bottom: 25px;">
-            <h2 style="font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
-                 Painel de Atendimento ao Leitor
+            <h2 style="font-size: 24px; font-weight: 800; color: #2E1065; margin-bottom: 6px;">
+                Painel de Atendimento ao Leitor
             </h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin: 0;">
+            <p style="color: #6B21A8; font-size: 14px; margin: 0;">
                 Gerencie dúvidas, mensagens de suporte e envie respostas diretas aos leitores da Toca de Leitura.
             </p>
         </div>
 
-        <!-- Alerta verde de confirmação ao responder ou excluir -->
-        <?php if (!empty($mensagem_sucesso)): ?>
+        <!-- MENSAGEM DE SUCESSO -->
+        <?php if (!empty($mensagem)): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                 <?= htmlspecialchars($mensagem_sucesso); ?>
+                <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
-        <!-- Alerta amarelo para erros de preenchimento ou banco -->
+        <!-- MENSAGEM DE ERRO -->
         <?php if (!empty($erro)): ?>
-            <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
-                 <?= htmlspecialchars($erro); ?>
+            <div style="background-color: #FEE2E2; color: #991B1B; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCA5A5; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
+                <?= htmlspecialchars($erro); ?>
             </div>
         <?php endif; ?>
 
-        <!-- Aviso exibido caso a tabela de mensagens ainda não tenha sido criada no banco -->
-        <?php if (!$has_mensagens_table): ?>
+        <!-- AVISO CASO A TABELA NÃO EXISTA NO BANCO -->
+        <?php if (!$has_table): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 16px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-size: 14px;">
-                 <strong>Aviso:</strong> A tabela de mensagens (<code>mensagens_contato</code> ou <code>mensagens</code>) ainda não foi encontrada no seu banco de dados local.
+                <strong>Aviso:</strong> A tabela de mensagens (<code>mensagens</code> ou <code>fale_conosco</code>) ainda não foi criada no banco de dados local.
             </div>
         <?php endif; ?>
 
-        <!-- LISTAGEM DAS MENSAGENS EM FORMATO DE CARDS -->
+        <!-- TABELA DE MENSAGENS -->
         <?php if (!empty($mensagens)): ?>
-            <?php foreach ($mensagens as $msg): 
-                // Formata a data e hora do envio da mensagem
-                $raw_data_envio = $msg['data_envio'] ?? $msg['criado_em'] ?? $msg['data'] ?? null;
-                $data_envio     = $raw_data_envio ? date('d/m/Y \à\s H:i', strtotime($raw_data_envio)) : 'Recente';
-                $ja_respondido  = !empty($msg['resposta_admin']);
-                
-                // Trata a acentuação (UTF-8) do nome, e-mail, assunto e conteúdo recebido
-                $nome_leitor_raw  = $msg['nome'] ?? $msg['nome_usuario'] ?? 'Visitante';
-                $nome_leitor      = mb_convert_encoding($nome_leitor_raw, 'UTF-8', 'ISO-8859-1');
-                
-                $email_leitor_raw = $msg['email'] ?? 'N/A';
-                $email_leitor     = mb_convert_encoding($email_leitor_raw, 'UTF-8', 'ISO-8859-1');
-                
-                $assunto_raw      = $msg['assunto'] ?? 'Geral / Dúvida';
-                $assunto          = mb_convert_encoding($assunto_raw, 'UTF-8', 'ISO-8859-1');
-                
-                $conteudo_msg_raw = $msg['mensagem'] ?? $msg['conteudo'] ?? '';
-                $conteudo_msg     = mb_convert_encoding($conteudo_msg_raw, 'UTF-8', 'ISO-8859-1');
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background-color: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1.5px solid #E9D5FF; text-align: left;">
+                    <thead>
+                        <tr style="background-color: #F3E8FF; color: #2E1065; font-size: 14px; text-transform: uppercase;">
+                            <th style="padding: 12px;">ID</th>
+                            <th style="padding: 12px;">LEITOR / REMETENTE</th>
+                            <th style="padding: 12px;">E-MAIL / CONTATO</th>
+                            <th style="padding: 12px;">ASSUNTO & MENSAGEM</th>
+                            <th style="padding: 12px;">DATA</th>
+                            <th style="padding: 12px;">STATUS</th>
+                            <th style="padding: 12px; text-align: center;">AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($mensagens as $m): 
+                            $m_id = $m['id'];
 
-                $resposta_admin_raw = $msg['resposta_admin'] ?? '';
-                $resposta_admin     = mb_convert_encoding($resposta_admin_raw, 'UTF-8', 'ISO-8859-1');
-            ?>
-                <!-- Card individual de atendimento -->
-                <div style="background-color: #FFFFFF; border: 1.5px solid <?= $ja_respondido ? '#86EFAC' : 'var(--border-soft)'; ?>; border-radius: var(--radius-card); padding: 22px; margin-bottom: 25px; box-shadow: var(--shadow-card); transition: all 0.2s ease;">
-                    
-                    <!-- Topo do Card: Nome do leitor, e-mail e selo de status (Respondida / Pendente) -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1.5px solid var(--border-soft); padding-bottom: 12px; margin-bottom: 15px;">
-                        <div>
-                            <span style="font-size: 16px; font-weight: 800; color: var(--text-dark);"> <?= htmlspecialchars($nome_leitor); ?></span>
-                            <span style="font-size: 13px; color: var(--text-muted); margin-left: 6px;">
-                                (&lt;<a href="mailto:<?= htmlspecialchars($email_leitor); ?>" style="color: var(--fox-purple); text-decoration: underline;"><?= htmlspecialchars($email_leitor); ?></a>&gt;)
-                            </span>
-                            
-                            <!-- Selo exibido se a mensagem veio de um usuário cadastrado no sistema -->
-                            <?php if (!empty($msg['nome_usuario']) || !empty($msg['usuario_id'])): ?>
-                                <span style="font-size: 11px; background-color: #FAF5FF; color: var(--fox-purple); font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-soft); margin-left: 8px;">
-                                     Usuário Cadastrado
-                                </span>
-                            <?php endif; ?>
-                        </div>
+                            // Tratamento de codificação sem depender do mbstring
+                            $nome_raw = $m['nome'] ?? $m['usuario_nome'] ?? $m['remetente'] ?? 'Leitor Anônimo';
+                            $nome     = function_exists('fix_utf8') ? fix_utf8($nome_raw) : $nome_raw;
 
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;"> <?= $data_envio; ?></span>
-                            
-                            <!-- Badges visuais de status da mensagem -->
-                            <?php if ($ja_respondido): ?>
-                                <span style="background-color: #DCFCE7; color: #15803D; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 11px; text-transform: uppercase;">
-                                     Respondida
-                                </span>
-                            <?php else: ?>
-                                <span style="background-color: #FEF3C7; color: #B45309; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 11px; text-transform: uppercase;">
-                                     Pendente
-                                </span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                            $email_raw = $m['email'] ?? $m['usuario_email'] ?? '—';
+                            $email     = function_exists('fix_utf8') ? fix_utf8($email_raw) : $email_raw;
 
-                    <!-- Exibição do assunto e do texto enviado pelo leitor -->
-                    <div style="margin-bottom: 15px;">
-                        <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 800; color: var(--text-dark);">
-                             Assunto: <span style="color: var(--fox-purple);"><?= htmlspecialchars($assunto); ?></span>
-                        </p>
-                        
-                        <div style="background-color: #FAF5FF; padding: 14px 16px; border-left: 4px solid var(--bg-header-dark); border-radius: 0 10px 10px 0; font-size: 13px; line-height: 1.5; color: var(--text-dark);">
-                            <strong style="color: var(--text-dark);">Mensagem do leitor:</strong>
-                            <p style="margin: 6px 0 0 0; white-space: pre-wrap;"><?= htmlspecialchars($conteudo_msg); ?></p>
-                        </div>
-                    </div>
+                            $assunto_raw = $m['assunto'] ?? 'Dúvida / Atendimento';
+                            $assunto     = function_exists('fix_utf8') ? fix_utf8($assunto_raw) : $assunto_raw;
 
-                    <!-- Bloco verde exibido quando a mensagem já possui uma resposta salva -->
-                    <?php if ($ja_respondido): ?>
-                        <div style="background-color: #F0FDF4; padding: 14px 16px; border-left: 4px solid #16A34A; border-radius: 0 10px 10px 0; margin-bottom: 15px; font-size: 13px; line-height: 1.5;">
-                            <strong style="color: #15803D;">
-                                 Resposta enviada pelo Admin (<?= !empty($msg['data_resposta']) ? date('d/m/Y \à\s H:i', strtotime($msg['data_resposta'])) : 'Enviada'; ?>):
-                            </strong>
-                            <p style="margin: 6px 0 0 0; color: #166534; white-space: pre-wrap;"><?= htmlspecialchars($resposta_admin); ?></p>
-                        </div>
-                    <?php endif; ?>
+                            $conteudo_raw = $m['mensagem'] ?? $m['conteudo'] ?? $m['texto'] ?? '';
+                            $conteudo     = function_exists('fix_utf8') ? fix_utf8($conteudo_raw) : $conteudo_raw;
 
-                    <!-- Formulário expansível (<details>) para escrever ou editar a resposta -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px; border-top: 1px dashed var(--border-soft); padding-top: 15px;">
-                        <details style="flex: 1;" <?= !$ja_respondido ? 'open' : ''; ?>>
-                            <summary style="cursor: pointer; color: var(--fox-purple); font-weight: 800; font-size: 13px; user-select: none;">
-                                <?= $ja_respondido ? ' Editar Resposta Enviada' : ' Escrever Resposta para este leitor'; ?>
-                            </summary>
-                            
-                            <form action="<?= BASE_URL; ?>admin_mensagens.php" method="POST" style="margin-top: 12px;">
-                                <input type="hidden" name="acao" value="responder">
-                                <input type="hidden" name="mensagem_id" value="<?= $msg['id']; ?>">
-                                
-                                <textarea name="resposta_admin" rows="3" style="width: 100%; padding: 12px; border: 1.5px solid var(--border-soft); border-radius: var(--radius-input); box-sizing: border-box; font-family: inherit; font-size: 13px; background-color: #FAF5FF; color: var(--text-dark); margin-bottom: 10px;" placeholder="Digite aqui a solução ou resposta enviada ao usuário..." required><?= htmlspecialchars($resposta_admin); ?></textarea>
-                                
-                                <button type="submit" class="btn-foxy" style="padding: 8px 18px; font-size: 13px;">
-                                    <?= $ja_respondido ? ' Atualizar Resposta' : ' Enviar Resposta ao Leitor'; ?>
-                                </button>
-                            </form>
-                        </details>
+                            $status_raw = $m['status'] ?? 'Pendente';
+                            $status     = function_exists('fix_utf8') ? fix_utf8($status_raw) : $status_raw;
 
-                        <!-- Botão de exclusão permanente com confirmação em JavaScript -->
-                        <form action="<?= BASE_URL; ?>admin_mensagens.php" method="POST" onsubmit="return confirm('Deseja realmente apagar esta mensagem permanentemente?');" style="margin-left: 15px;">
-                            <input type="hidden" name="acao" value="excluir">
-                            <input type="hidden" name="mensagem_id" value="<?= $msg['id']; ?>">
-                            <button type="submit" style="background: none; border: none; color: var(--apple-red); font-size: 13px; font-weight: 800; cursor: pointer; text-decoration: underline; box-shadow: none !important;">
-                                 Excluir
-                            </button>
-                        </form>
-                    </div>
+                            // Formatação de data
+                            $raw_date = $m['data_envio'] ?? $m['criado_em'] ?? $m['created_at'] ?? $m['data'] ?? null;
+                            $data_fmt = $raw_date ? date('d/m/Y \à\s H:i', strtotime($raw_date)) : 'Recente';
 
-                </div>
-            <?php endforeach; ?>
-        <?php elseif ($has_mensagens_table): ?>
-            <!-- Mensagem amigável exibida quando não há contatos de leitores gravados -->
-            <div style="text-align: center; padding: 40px 20px; background-color: #FAF5FF; border: 1.5px dashed var(--border-soft); border-radius: 12px; color: var(--text-muted);">
-                <p style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Nenhuma mensagem de suporte recebida até o momento.</p>
-                <p style="font-size: 13px; margin: 0;">As dúvidas e contatos enviados pelos leitores aparecerão automaticamente aqui.</p>
+                            // Cores de status
+                            $st_lower = strtolower((string)$status);
+                            if (in_array($st_lower, ['lida', 'respondida', 'concluido'])) {
+                                $bg_badge  = '#DCFCE7';
+                                $cor_badge = '#15803D';
+                            } else {
+                                $bg_badge  = '#FEF3C7';
+                                $cor_badge = '#B45309';
+                            }
+                        ?>
+                            <tr style="border-bottom: 1px solid #F3E8FF; font-size: 13px;">
+                                <td style="padding: 12px; font-weight: 800; color: #6B21A8;">
+                                    #<?= htmlspecialchars($m_id); ?>
+                                </td>
+                                <td style="padding: 12px; font-weight: 800; color: #2E1065;">
+                                    <?= htmlspecialchars($nome); ?>
+                                </td>
+                                <td style="padding: 12px; color: #2E1065;">
+                                    <a href="mailto:<?= htmlspecialchars($email); ?>" style="color: #7C3AED; text-decoration: none; font-weight: 700;">
+                                        <?= htmlspecialchars($email); ?>
+                                    </a>
+                                </td>
+                                <td style="padding: 12px; max-width: 320px;">
+                                    <strong style="color: #2E1065; display: block; margin-bottom: 4px;"><?= htmlspecialchars($assunto); ?></strong>
+                                    <span style="color: #4C1D95; font-size: 12px; display: block; line-height: 1.4;">
+                                        <?= nl2br(htmlspecialchars($conteudo)); ?>
+                                    </span>
+                                </td>
+                                <td style="padding: 12px; color: #666; font-size: 12px;">
+                                    <?= htmlspecialchars($data_fmt); ?>
+                                </td>
+                                <td style="padding: 12px;">
+                                    <span style="background-color: <?= $bg_badge; ?>; color: <?= $cor_badge; ?>; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 11px; display: inline-block;">
+                                        <?= htmlspecialchars($status); ?>
+                                    </span>
+                                </td>
+                                <td style="padding: 12px; text-align: center; vertical-align: middle;">
+                                    <div style="display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: nowrap; white-space: nowrap;">
+                                        
+                                        <!-- BOTÃO RESPONDER -->
+                                        <?php if ($email !== '—'): ?>
+                                            <a href="mailto:<?= htmlspecialchars($email); ?>?subject=Re: <?= urlencode($assunto); ?>" 
+                                               style="background-color: #7C3AED; color: #ffffff; text-decoration: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center;"
+                                               title="Responder por E-mail">
+                                               Responder
+                                            </a>
+                                        <?php endif; ?>
+
+                                        <!-- BOTÃO EXCLUIR -->
+                                        <form action="admin_mensagens.php" method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('Deseja realmente apagar esta mensagem?');">
+                                            <input type="hidden" name="acao" value="excluir_mensagem">
+                                            <input type="hidden" name="msg_id" value="<?= $m_id; ?>">
+                                            <button type="submit" 
+                                                    style="background-color: #EF4444; color: #ffffff; border: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center;"
+                                                    title="Excluir Mensagem">
+                                                Excluir
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+        <!-- MENSAGEM QUANDO A TABELA EXISTE MAS ESTÁ VAZIA -->
+        <?php elseif ($has_table): ?>
+            <div style="text-align: center; padding: 40px 20px; background-color: #FAF5FF; border: 1.5px dashed #E9D5FF; border-radius: 12px; color: #6B21A8;">
+                <p style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Nenhuma mensagem recebida no momento.</p>
+                <p style="font-size: 13px; margin: 0;">As dúvidas enviadas pelos leitores na tela "Contate-nos" serão exibidas nesta área.</p>
             </div>
         <?php endif; ?>
 
-        <!-- Link para retornar ao menu principal do painel administrativo -->
-        <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
-            <a href="<?= BASE_URL; ?>admin.php">← Voltar ao Painel do Administrador</a>
+        <!-- LINK DE RETORNO -->
+        <div style="margin-top: 25px; text-align: left;">
+            <a href="<?= BASE_URL; ?>admin.php" style="color: #7C3AED; font-weight: 800; text-decoration: none;">← Voltar ao Painel do Administrador</a>
         </div>
 
     </section>
 
 </main>
 
-<!-- Inclui o rodapé visual do site -->
+<!-- RODAPÉ DO SITE -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 
