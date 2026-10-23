@@ -1,4 +1,3 @@
-```markdown
 <h1 align="center">A Toca de Leitura</h1>
 <h3 align="center">Sistema de Gerenciamento e Comunidade Literária</h3>
 
@@ -84,7 +83,6 @@ O sistema implementa operações **CRUD** (Create, Read, Update e Delete), valid
 | **Git** | Controle de versão |
 
 ---
-
 ## 2. Como Executar o Projeto Localmente
 
 Siga as etapas abaixo para configurar e executar a aplicação em um ambiente local.
