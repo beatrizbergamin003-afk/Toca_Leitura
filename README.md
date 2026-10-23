@@ -1,4 +1,5 @@
-<h1 align="center"> A Toca de Leitura</h1>
+```markdown
+<h1 align="center">A Toca de Leitura</h1>
 <h3 align="center">Sistema de Gerenciamento e Comunidade Literária</h3>
 
 <div align="center">
@@ -14,15 +15,15 @@
 
 <hr>
 
-##  Sobre o projeto
+## Sobre o projeto
 
-Desenvolvida em **PHP 8.2 ou superior**, com **PostgreSQL** como sistema gerenciador de banco de dados, **A Toca de Leitura** é uma aplicação web que integra diferentes etapas da jornada php -S 0.0.0.0:8000   literária.
+Desenvolvida em **PHP 8.2 ou superior**, com **PostgreSQL** como sistema gerenciador de banco de dados, **A Toca de Leitura** é uma aplicação web que integra diferentes etapas da jornada php -S 0.0.0.0:8000 literária.
 
 A plataforma conecta a descoberta e a aquisição de livros ao acompanhamento de hábitos de leitura, à organização de uma estante virtual e ao compartilhamento de experiências em uma comunidade de leitores.
 
 O sistema implementa operações **CRUD** (Create, Read, Update e Delete), validação de entradas, gerenciamento de sessões e controle de acesso baseado em funções (**RBAC** — *Role-Based Access Control*).
 
-###  Funcionalidades principais
+### Funcionalidades principais
 
 - Cadastro, autenticação e gerenciamento de usuários.
 - Catálogo de livros com pesquisa e filtros por gênero.
@@ -35,10 +36,10 @@ O sistema implementa operações **CRUD** (Create, Read, Update e Delete), valid
 
 ---
 
-##  Índice
+## Índice
 
-- [ Sobre o projeto](#-sobre-o-projeto)
-- [1. Tecnologias Utilizadas](#1-tecnologias-utilizadas)
+- [Sobre o projeto](#sobre-o-projeto)
+1. [Tecnologias Utilizadas](#1-tecnologias-utilizadas)
 - [2. Como Executar o Projeto Localmente](#2-como-executar-o-projeto-localmente)
   - [2.1. Pré-Requisitos](#21-pré-requisitos)
   - [2.2. Instalação](#22-instalação)
@@ -65,7 +66,6 @@ O sistema implementa operações **CRUD** (Create, Read, Update e Delete), valid
   - [6.1. Diagrama Entidade-Relacionamento (MER)](#61-diagrama-entidade-relacionamento-mer)
   - [6.2. Fluxo de Processo](#62-fluxo-de-processo)
 - [7. Protótipos](#7-protótipos)
-  - [Baixa Fidelidade](#baixa-fidelidade)
   - [Baixa Fidelidade](#baixa-fidelidade)
 - [8. Contribuindo](#8-contribuindo)
 - [9. Contato & Suporte](#9-contato--suporte)
@@ -106,13 +106,12 @@ Abra o terminal e execute:
 
 ```bash
 # Clone o repositório
-git clone https://github.com/beatrizbergamin003-afk/projetointegrador_tocaleitura.git
+git clone [https://github.com/beatrizbergamin003-afk/projetointegrador_tocaleitura.git](https://github.com/beatrizbergamin003-afk/projetointegrador_tocaleitura.git)
 
 # Acesse a pasta do projeto
 cd projetointegrador_tocaleitura
-```
 
-.
+```
 
 ---
 
@@ -123,7 +122,8 @@ O projeto utiliza o banco de dados `toca_leitura`. Toda a estrutura e os dados i
 1. Acesse o PostgreSQL com o usuário padrão:
 
 ```bash
-psql -U postgres 
+psql -U postgres
+
 ```
 
 2. Crie o banco de dados:
@@ -131,8 +131,8 @@ psql -U postgres
 ```sql
 CREATE DATABASE toca_leitura
     WITH ENCODING = 'UTF8';
-```
 
+```
 
 > Se o banco já existir e você realmente quiser recriá-lo, faça backup dos dados e remova-o antes de executar o comando acima.
 
@@ -142,15 +142,15 @@ CREATE DATABASE toca_leitura
 CREATE USER raposa WITH PASSWORD 'raposa123';
 ALTER DATABASE toca_leitura OWNER TO raposa;
 \q
+
 ```
 
 4. Na raiz do projeto, importe a estrutura e os dados iniciais:
 
 ```bash
 psql -U raposa -h localhost -d toca_leitura -f dump_tocaLeitura.sql
+
 ```
-
-
 
 ---
 
@@ -173,6 +173,7 @@ $pdo = new PDO($dsn, $user, $password, [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 ]);
+
 ```
 
 ---
@@ -183,12 +184,14 @@ Na raiz do projeto, inicie o servidor embutido do PHP:
 
 ```bash
 php -S localhost:8000
+
 ```
 
 Em seguida, acesse no navegador:
 
 ```
 http://localhost:8000/projetointegrador_tocaleitura/paginas_site/index.php
+
 ```
 
 Para interromper o servidor, pressione `Ctrl + C` no terminal.
@@ -197,8 +200,7 @@ Para interromper o servidor, pressione `Ctrl + C` no terminal.
 
 ## 3. Estrutura de Diretórios
 
-````
-
+```text
 projetointegrador_tocaleitura
 ├── .gitignore
 ├── dump_tocaLeitura.sql
@@ -228,7 +230,8 @@ projetointegrador_tocaleitura
     ├── logout.php
     ├── procurar.php
     └── resenhas.php
-    ````
+
+```
 
 ---
 
@@ -237,44 +240,44 @@ projetointegrador_tocaleitura
 ### 4.1. Requisitos Funcionais
 
 | ID | Título | Descrição | Prioridade | Feito? |
-|----|--------|-----------|------------|:------:|
-| **RF01** | Cadastro de Usuários | Permitir cadastro com nome completo, e-mail único e senha | Alta | ✅ |
-| **RF02** | Autenticação | Validar credenciais e gerenciar sessões de usuários | Alta | ✅ |
-| **RF03** | Exclusão de Conta | Permitir que o leitor exclua sua conta mediante confirmação | Alta | ✅ |
-| **RF04** | Controle de Permissões | Diferenciar leitores e administradores por meio de `is_admin` | Alta | ✅ |
-| **RF05** | Gerenciamento da Estante | Registrar livros, gêneros e metas de leitura | Alta | ✅ |
-| **RF06** | Cálculo de Progresso | Calcular a porcentagem de leitura com base nas páginas lidas | Alta | ✅ |
-| **RF07** | Divulgação no Feed | Oferecer publicação do progresso no feed comunitário | Média | ✅ |
-| **RF08** | Remoção da Estante | Permitir a remoção de registros do histórico individual | Média | ✅ |
-| **RF09** | Catálogo sem Duplicidades | Evitar a exibição duplicada de títulos no catálogo | Alta | ✅ |
-| **RF10** | Filtro por Categoria | Filtrar livros por gênero literário | Alta | ✅ |
-| **RF11** | Pesquisa de Obras | Buscar livros por título, autor ou editora | Alta | ✅ |
-| **RF12** | Ranking de Leitura | Exibir os livros mais lidos quando não houver filtros ativos | Média | ✅ |
-| **RF13** | Publicações no Feed | Permitir opiniões e organizar publicações por categorias | Alta | ✅ |
-| **RF14** | Exclusão de Publicações | Permitir que leitores excluam suas próprias postagens | Média | ✅ |
-| **RF15** | Resenhas em Vídeo | Incorporar vídeos do YouTube na página de resenhas | Alta | ✅ |
-| **RF16** | Contato | Permitir o envio de dúvidas e sugestões à equipe | Alta | ✅ |
-| **RF17** | Painel Administrativo | Disponibilizar uma interface de administração restrita | Alta | ✅ |
-| **RF18** | Moderação | Permitir o gerenciamento de contas, permissões e publicações | Alta | ✅ |
+| --- | --- | --- | --- | --- |
+| **RF01** | Cadastro de Usuários | Permitir cadastro com nome completo, e-mail único e senha | Alta | Sim |
+| **RF02** | Autenticação | Validar credenciais e gerenciar sessões de usuários | Alta | Sim |
+| **RF03** | Exclusão de Conta | Permitir que o leitor exclua sua conta mediante confirmação | Alta | Sim |
+| **RF04** | Controle de Permissões | Diferenciar leitores e administradores por meio de `is_admin` | Alta | Sim |
+| **RF05** | Gerenciamento da Estante | Registrar livros, gêneros e metas de leitura | Alta | Sim |
+| **RF06** | Cálculo de Progresso | Calcular a porcentagem de leitura com base nas páginas lidas | Alta | Sim |
+| **RF07** | Divulgação no Feed | Oferecer publicação do progresso no feed comunitário | Média | Sim |
+| **RF08** | Remoção da Estante | Permitir a remoção de registros do histórico individual | Média | Sim |
+| **RF09** | Catálogo sem Duplicidades | Evitar a exibição duplicada de títulos no catálogo | Alta | Sim |
+| **RF10** | Filtro por Categoria | Filtrar livros por gênero literário | Alta | Sim |
+| **RF11** | Pesquisa de Obras | Buscar livros por título, autor ou editora | Alta | Sim |
+| **RF12** | Ranking de Leitura | Exibir os livros mais lidos quando não houver filtros ativos | Média | Sim |
+| **RF13** | Publicações no Feed | Permitir opiniões e organizar publicações por categorias | Alta | Sim |
+| **RF14** | Exclusão de Publicações | Permitir que leitores excluam suas próprias postagens | Média | Sim |
+| **RF15** | Resenhas em Vídeo | Incorporar vídeos do YouTube na página de resenhas | Alta | Sim |
+| **RF16** | Contato | Permitir o envio de dúvidas e sugestões à equipe | Alta | Sim |
+| **RF17** | Painel Administrativo | Disponibilizar uma interface de administração restrita | Alta | Sim |
+| **RF18** | Moderação | Permitir o gerenciamento de contas, permissões e publicações | Alta | Sim |
 
 ### 4.2. Requisitos Não Funcionais
 
 | ID | Título | Descrição | Prioridade | Feito? |
-|----|--------|-----------|------------|:------:|
-| **RNF01** | Linguagem | Back-end desenvolvido em PHP 8.2 ou superior | Alta | ✅ |
-| **RNF02** | Banco de Dados | PostgreSQL com codificação UTF-8 | Alta | ✅ |
-| **RNF03** | Senhas | Utilização de `password_hash()` para armazenamento seguro | Alta | ✅ |
-| **RNF04** | Proteção contra SQL Injection | Utilização de consultas preparadas via PDO | Alta | ✅ |
-| **RNF05** | Proteção contra XSS | Tratamento de dados exibidos em HTML com `htmlspecialchars()` | Alta | ✅ |
-| **RNF06** | Sessões | Controle de acesso a áreas privadas por sessões no servidor | Alta | ✅ |
-| **RNF07** | Integridade Referencial | Utilização de chaves estrangeiras e regras de exclusão | Alta | ✅ |
-| **RNF08** | Responsividade | Interface adaptável a computadores e dispositivos móveis | Média | ✅ |
-| **RNF09** | Codificação | Padronização dos arquivos de código e compatibilidade de caracteres | Alta | ✅ |
+| --- | --- | --- | --- | --- |
+| **RNF01** | Linguagem | Back-end desenvolvido em PHP 8.2 ou superior | Alta | Sim |
+| **RNF02** | Banco de Dados | PostgreSQL com codificação UTF-8 | Alta | Sim |
+| **RNF03** | Senhas | Utilização de `password_hash()` para armazenamento seguro | Alta | Sim |
+| **RNF04** | Proteção contra SQL Injection | Utilização de consultas preparadas via PDO | Alta | Sim |
+| **RNF05** | Proteção contra XSS | Tratamento de dados exibidos em HTML com `htmlspecialchars()` | Alta | Sim |
+| **RNF06** | Sessões | Controle de acesso a áreas privadas por sessões no servidor | Alta | Sim |
+| **RNF07** | Integridade Referencial | Utilização de chaves estrangeiras e regras de exclusão | Alta | Sim |
+| **RNF08** | Responsividade | Interface adaptável a computadores e dispositivos móveis | Média | Sim |
+| **RNF09** | Codificação | Padronização dos arquivos de código e compatibilidade de caracteres | Alta | Sim |
 
 ### 4.3. Regras de Negócio
 
 | ID | Regra | Descrição |
-|----|-------|-----------|
+| --- | --- | --- |
 | **RN01** | Unicidade de E-mail | Não permitir mais de uma conta com o mesmo e-mail |
 | **RN02** | Unicidade do Título | Impedir títulos duplicados no catálogo comercial (constraint `UNIQUE`) |
 | **RN03** | Limite de Progresso | Calcular o progresso entre 0% e 100%, com base nas páginas lidas e no total de páginas |
@@ -296,7 +299,7 @@ O banco de dados organiza as informações de usuários, livros, históricos de 
 Armazena as contas de leitores e administradores.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador do usuário |
 | `nome` | VARCHAR(255) | NOT NULL | Nome completo |
 | `email` | VARCHAR(255) | UNIQUE NOT NULL | E-mail de autenticação |
@@ -309,15 +312,15 @@ Armazena as contas de leitores e administradores.
 Armazena o catálogo comercial de livros.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador do livro |
 | `titulo` | VARCHAR(255) | UNIQUE NOT NULL | Título da obra |
 | `autor` | VARCHAR(255) | NOT NULL | Autor do livro |
-| `editora` | VARCHAR(255) | | Editora responsável |
+| `editora` | VARCHAR(255) |  | Editora responsável |
 | `genero` | VARCHAR(100) | NOT NULL | Gênero literário |
 | `preco` | DECIMAL(10,2) | DEFAULT 0.00 | Preço comercial |
 | `estrelas` | INTEGER | DEFAULT 5 | Avaliação em estrelas |
-| `capa_url` | VARCHAR(255) | | Caminho ou URL da capa |
+| `capa_url` | VARCHAR(255) |  | Caminho ou URL da capa |
 | `total_leitores` | INTEGER | DEFAULT 0 | Quantidade acumulada de leitores |
 
 ### Entidade: `historico_leitura`
@@ -325,12 +328,12 @@ Armazena o catálogo comercial de livros.
 Registra a estante virtual e o progresso individual dos leitores.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador do histórico |
 | `usuario_id` | INTEGER | NOT NULL FK → `usuarios(id)` ON DELETE CASCADE | Usuário proprietário do registro |
 | `livro_nome` | VARCHAR(255) | NOT NULL | Título do livro |
-| `genero` | VARCHAR(100) | | Gênero literário |
-| `tempo_leitura` | VARCHAR(255) | | Meta de tempo de leitura |
+| `genero` | VARCHAR(100) |  | Gênero literário |
+| `tempo_leitura` | VARCHAR(255) |  | Meta de tempo de leitura |
 | `paginas_lidas` | INTEGER | DEFAULT 0 CHECK (paginas_lidas >= 0) | Páginas lidas |
 | `total_paginas` | INTEGER | DEFAULT 0 CHECK (total_paginas >= 0) | Total de páginas |
 | `progresso_pct` | INTEGER | DEFAULT 0 CHECK (progresso_pct BETWEEN 0 AND 100) | Progresso percentual |
@@ -341,7 +344,7 @@ Registra a estante virtual e o progresso individual dos leitores.
 Armazena as publicações da comunidade literária.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador da publicação |
 | `usuario_id` | INTEGER | NOT NULL FK → `usuarios(id)` | Autor da publicação |
 | `livro_nome` | VARCHAR(255) | NOT NULL | Livro mencionado |
@@ -355,25 +358,25 @@ Armazena as publicações da comunidade literária.
 Armazena informações sobre resenhas audiovisuais.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador da resenha |
 | `titulo_livro` | VARCHAR(255) | NOT NULL | Título da obra analisada |
 | `url_video` | VARCHAR(255) | NOT NULL | Link do vídeo |
-| `resumo` | TEXT | | Resumo da análise |
+| `resumo` | TEXT |  | Resumo da análise |
 
 ### Entidade: `mensagens_contato`
 
 Registra dúvidas e sugestões enviadas à equipe.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador da mensagem |
 | `usuario_id` | INTEGER | FK → `usuarios(id)` ON DELETE SET NULL | Usuário associado à mensagem |
 | `nome` | VARCHAR(255) | NOT NULL | Nome do remetente |
 | `email` | VARCHAR(255) | NOT NULL | E-mail para resposta |
-| `assunto` | VARCHAR(255) | | Assunto da mensagem |
+| `assunto` | VARCHAR(255) |  | Assunto da mensagem |
 | `mensagem` | TEXT | NOT NULL | Conteúdo enviado |
-| `resposta_admin` | TEXT | | Resposta administrativa |
+| `resposta_admin` | TEXT |  | Resposta administrativa |
 | `status` | VARCHAR(50) | DEFAULT 'Pendente' | Estado do atendimento |
 | `criado_em` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Data do envio |
 
@@ -382,7 +385,7 @@ Registra dúvidas e sugestões enviadas à equipe.
 Armazena os pedidos e compras realizados na plataforma.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador do pedido |
 | `usuario_id` | INTEGER | NOT NULL FK → `usuarios(id)` | Cliente responsável |
 | `total` | DECIMAL(10,2) | NOT NULL | Valor total do pedido |
@@ -394,7 +397,7 @@ Armazena os pedidos e compras realizados na plataforma.
 Armazena os itens vinculados a cada pedido.
 
 | Campo | Tipo | Restrições | Descrição |
-|-------|------|-----------|-----------|
+| --- | --- | --- | --- |
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador do item |
 | `pedido_id` | INTEGER | NOT NULL FK → `pedidos(id)` | Pedido associado |
 | `livro_id` | INTEGER | FK → `livros(id)` | Livro adquirido |
@@ -403,12 +406,12 @@ Armazena os itens vinculados a cada pedido.
 
 ### Relacionamentos Principais
 
-- Um usuário pode possuir vários registros de leitura.
-- Um usuário pode publicar várias postagens.
-- Um usuário pode realizar vários pedidos.
-- Um usuário pode estar associado a várias mensagens de contato.
-- Um pedido contém um ou mais itens.
-- Um livro pode estar associado a vários itens de pedido.
+* Um usuário pode possuir vários registros de leitura.
+* Um usuário pode publicar várias postagens.
+* Um usuário pode realizar vários pedidos.
+* Um usuário pode estar associado a várias mensagens de contato.
+* Um pedido contém um ou mais itens.
+* Um livro pode estar associado a vários itens de pedido.
 
 > [!NOTE]
 > O histórico de leitura e o feed utilizam `livro_nome` como referência textual, portanto não há chave estrangeira direta dessas entidades para `livros`. As regras de exclusão dependem das chaves estrangeiras definidas no banco.
@@ -505,11 +508,10 @@ erDiagram
     usuarios o|--o{ mensagens_contato : envia
     pedidos ||--|{ itens_pedido : inclui
     livros o|--o{ itens_pedido : referencia
+
 ```
 
 ### 6.2. Fluxo de Processo
-
-O fluxo a seguir ilustra a navegação geral, a autenticação e o controle de acesso administrativo.
 
 ```mermaid
 flowchart TD
@@ -555,6 +557,7 @@ flowchart TD
     S -->|Sim| U["Acessar painel administrativo"]
     U --> V["Gerenciar usuários e conteúdos"]
     V --> Z
+
 ```
 
 ---
@@ -567,11 +570,9 @@ Os protótipos foram concebidos para orientar a estrutura visual e a experiênci
 
 Desenvolvida no **Figma**, apresenta a organização inicial das telas, os componentes principais e a disposição dos elementos da interface.
 
-
-- [Veja aqui - Figma](https://www.figma.com/design/KhYrD2I4Na1ZsM2SkKtQpK/A-Toca-Liter%C3%A1ria?node-id=0-1&t=oUdD56zGRyek6sOF-1)
+* [Veja aqui - Figma](https://www.figma.com/design/KhYrD2I4Na1ZsM2SkKtQpK/A-Toca-Liter%C3%A1ria?node-id=0-1&t=oUdD56zGRyek6sOF-1)
 
 ---
-
 
 ## 8. Contribuindo
 
@@ -588,16 +589,12 @@ Contribuições são bem-vindas! Para propor melhorias, corrigir problemas ou ad
 
 ## 9. Contato & Suporte
 
-- **Autor**: Beatriz Neves Bergamin
-- **Email**: beatrizbergamin003@gmail.com
-- **GitHub**: github.com/beatrizbergamin003-afk
+* **Autor**: Beatriz Neves Bergamin
+* **Email**: beatrizbergamin003@gmail.com
+* **GitHub**: github.com/beatrizbergamin003-afk
 
 ---
 
-<div align="center">
-
-Desenvolvido com dedicação para incentivar a leitura e aproximar leitores. 
+Desenvolvido com dedicação para incentivar a leitura e aproximar leitores.
 
 **A Toca de Leitura**
-
-</div>
