@@ -1,28 +1,31 @@
 
 <?php 
+// Conecta ao banco de dados e traz as configurações do sistema
 require_once __DIR__ . '/../config/db.php';
 
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
+// Se a constante BASE_URL não tiver sido criada no db.php, define a rota padrão do site
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
+// Inicia ou recupera a sessão do leitor
 iniciar_sessao();
 
 $mensagem   = '';
 $usuario_id = $_SESSION['usuario_id'] ?? null;
 $busca      = trim($_GET['busca'] ?? '');
 
-// Função para converter links comuns do YouTube no formato Embed reproduzível
+// Função em Expressão Regular (Regex) que transforma links comuns do YouTube em links de iframe (Embed)
 function converterYoutubeEmbed($url) {
     preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $url, $match);
     return isset($match[1]) ? "https://www.youtube.com/embed/" . $match[1] : $url;
 }
 
-// ============================================================
+
 // 1. PROCESSAMENTO DE NOVA RESENHA DO USUÁRIO (TEXTO)
-// ============================================================
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Exige que o leitor esteja logado para conseguir publicar
     if (!$usuario_id) {
         header("Location: " . BASE_URL . "login.php?erro=restrito");
         exit;
@@ -33,7 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $progresso     = (int)($_POST['progresso'] ?? 0);
     $aba_categoria = trim($_POST['aba_categoria'] ?? 'Geral');
 
+    // Valida se o título do livro e o comentário foram preenchidos
     if (!empty($livro_nome) && !empty($comentario)) {
+        // Grava a resenha escrita pelo usuário na tabela de postagens do feed
         $stmt_post = $pdo->prepare("INSERT INTO postagens_feed (usuario_id, livro_nome, comentario, progresso, aba_categoria) VALUES (?, ?, ?, ?, ?)");
         if ($stmt_post->execute([$usuario_id, $livro_nome, $comentario, $progresso, $aba_categoria])) {
             header("Location: " . BASE_URL . "resenhas.php?sucesso=1");
@@ -46,11 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ============================================================
+
 // 2. CONSULTA DAS RESENHAS EM VÍDEO (7 gêneros diferentes por padrão)
-// ============================================================
+
 if (!empty($busca)) {
-    // Se houver busca, traz todos os vídeos que correspondem ao título do livro ou ao gênero
+    // Se houver pesquisa, busca todos os vídeos correspondentes ao título do livro ou gênero
     $sql_videos = "SELECT DISTINCT rv.*, l.genero 
                   FROM resenhas_videos rv 
                   LEFT JOIN livros l ON LOWER(TRIM(rv.titulo_livro)) = LOWER(TRIM(l.titulo)) 
@@ -59,7 +64,7 @@ if (!empty($busca)) {
     $stmt_videos = $pdo->prepare($sql_videos);
     $stmt_videos->execute(["%$busca%", "%$busca%"]);
 } else {
-    // Se NÃO houver busca, seleciona exatamente 1 vídeo de cada gênero (7 gêneros no total)
+    // Se NÃO houver busca, traz 1 vídeo de cada gênero (limitado a 7 gêneros no total com DISTINCT ON)
     $sql_videos = "SELECT DISTINCT ON (l.genero) rv.*, l.genero 
                   FROM resenhas_videos rv 
                   JOIN livros l ON LOWER(TRIM(rv.titulo_livro)) = LOWER(TRIM(l.titulo)) 
@@ -69,14 +74,16 @@ if (!empty($busca)) {
 }
 $resenhas_videos = $stmt_videos->fetchAll();
 
-// ============================================================
+
 // 3. CONSULTA DAS POSTAGENS DA COMUNIDADE (postagens_feed + usuarios)
-// ============================================================
+
+// Busca as análises escritas pelos próprios leitores vinculando com a tabela de usuários
 $sql_feed = "SELECT p.*, u.nome AS autor_nome 
              FROM postagens_feed p 
              JOIN usuarios u ON p.usuario_id = u.id";
 $params_feed = [];
 
+// Aplica o filtro de busca no nome do livro se tiver termo pesquisado
 if (!empty($busca)) {
     $sql_feed .= " WHERE p.livro_nome ILIKE ?";
     $params_feed[] = "%$busca%";
@@ -87,9 +94,11 @@ $stmt_feed = $pdo->prepare($sql_feed);
 $stmt_feed->execute($params_feed);
 $postagens_comunidade = $stmt_feed->fetchAll();
 
+// Inclui o topo e o menu de navegação do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
+<!-- ÁREA PRINCIPAL DA CENTRAL DE RESENHAS -->
 <main class="main-container">
 
     <!-- CABEÇALHO DA PÁGINA -->
@@ -98,31 +107,33 @@ require_once __DIR__ . '/../includes/header.php';
         <p style="color: var(--text-muted); font-size: 14px;">Assista a análises em vídeo, descubra opiniões e compartilhe suas leituras</p>
     </div>
 
-    <!-- BARRA DE PESQUISA ESTILIZADA -->
+    <!-- BARRA DE PESQUISA POR NOME DE LIVRO OU GÊNERO -->
     <section class="filtro-container">
         <form action="<?= BASE_URL; ?>resenhas.php" method="GET" class="filtro-form">
             <input type="text" name="busca" placeholder=" Pesquisar resenha por nome do livro ou gênero..." value="<?= htmlspecialchars($busca); ?>">
             <button type="submit" class="btn-foxy">Pesquisar</button>
             <?php if (!empty($busca)): ?>
+                <!-- Botão para redefinir a busca -->
                 <a href="<?= BASE_URL; ?>resenhas.php" class="btn-foxy" style="background-color: var(--apple-red) !important;">Limpar Busca</a>
             <?php endif; ?>
         </form>
     </section>
 
-    <!-- ALERTAS DE MENSAGENS -->
+    <!-- MENSAGEM DE CONFIRMAÇÃO DE PUBLICAÇÃO DA RESENHA -->
     <?php if (isset($_GET['sucesso'])): ?>
         <div style="background-color: #E8F5E9; color: #2E7D32; padding: 14px 20px; border-radius: 16px; margin-bottom: 25px; font-weight: 700; text-align: center;">
              Sua resenha foi publicada com sucesso no feed da comunidade!
         </div>
     <?php endif; ?>
 
+    <!-- MENSAGEM DE ERRO/ALERTA -->
     <?php if ($mensagem): ?>
         <div style="background-color: #FFEBEE; color: #C62828; padding: 14px 20px; border-radius: 16px; margin-bottom: 25px; font-weight: 700; text-align: center;">
              <?= htmlspecialchars($mensagem); ?>
         </div>
     <?php endif; ?>
 
-    <!-- FORMULÁRIO DE PUBLICAÇÃO DO LEITOR (CARD ACONCHEGANTE) -->
+    <!-- FORMULÁRIO DE ESCRITA DE RESENHA (Disponível apenas para leitores logados) -->
     <?php if ($usuario_id): ?>
         <section class="card-box" style="margin-bottom: 35px;">
             <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 15px;">
@@ -162,6 +173,7 @@ require_once __DIR__ . '/../includes/header.php';
             </form>
         </section>
     <?php else: ?>
+        <!-- Convite para cadastro/login exibido caso o leitor não esteja autenticado -->
         <div style="background-color: #FAF5FF; border: 1.5px solid var(--border-soft); border-radius: 18px; padding: 16px 20px; text-align: center; color: var(--text-dark); box-shadow: 0 4px 12px rgba(109, 40, 217, 0.08); margin-bottom: 35px;">
              Quer compartilhar sua opinião sobre algum livro? 
             <a href="<?= BASE_URL; ?>login.php" style="color: var(--fox-purple); font-weight: 800; text-decoration: underline;">Faça Login</a> ou 
@@ -169,7 +181,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     <?php endif; ?>
 
-    <!-- SEÇÃO 1: RESENHAS EM VÍDEO -->
+    <!-- SEÇÃO 1: EXIBIÇÃO DAS RESENHAS EM VÍDEO -->
     <div style="margin-bottom: 15px;">
         <h3 style="font-size: 22px; font-weight: 800; color: var(--text-dark);">
              Resenhas de Livros em Vídeo <?= empty($busca) ? '(1 de cada gênero)' : '- Resultados para "' . htmlspecialchars($busca) . '" (' . count($resenhas_videos) . ')'; ?>
@@ -178,29 +190,31 @@ require_once __DIR__ . '/../includes/header.php';
 
     <?php if (count($resenhas_videos) > 0): ?>
         <div class="resenhas-container">
+            <!-- Loop que desenha os cards com player de vídeo incorporado do YouTube -->
             <?php foreach ($resenhas_videos as $resenha): ?>
                 <?php 
+                    // Converte o link comum para o formato Embed seguro
                     $embed_url   = converterYoutubeEmbed($resenha['url_video']);
                     $titulo_utf8 = $resenha['titulo_livro'] ?? '';
                     $genero_utf8 = $resenha['genero'] ?? '';
                     $resumo_utf8 = $resenha['resumo'] ?? 'Confira a análise completa em vídeo sobre este livro incrível!';
                 ?>
-                <!-- CARD INDIVIDUAL COM BORDA REDONDA ROXA -->
+                <!-- Card individual do vídeo de resenha -->
                 <article class="card-resenha-video">
                     
-                    <!-- BADGE DO GÊNERO -->
+                    <!-- Badge mostrando o gênero literário -->
                     <?php if (!empty($genero_utf8)): ?>
                         <span class="livro-genero-badge" style="margin-bottom: 10px;">
                             <?= htmlspecialchars($genero_utf8); ?>
                         </span>
                     <?php endif; ?>
 
-                    <!-- 1. TÍTULO DO LIVRO CENTRALIZADO -->
+                    <!-- 1. TÍTULO DO LIVRO -->
                     <h3 class="resenha-titulo">
                         Análise de <?= htmlspecialchars($titulo_utf8); ?>
                     </h3>
 
-                    <!-- 2. VÍDEO NO CENTRO COM BORDAS ARREDONDADAS -->
+                    <!-- 2. PLAYER DO YOUTUBE (IFRAME EMBED) -->
                     <div class="video-wrapper">
                         <iframe 
                             src="<?= htmlspecialchars($embed_url); ?>" 
@@ -210,12 +224,12 @@ require_once __DIR__ . '/../includes/header.php';
                         </iframe>
                     </div>
 
-                    <!-- 3. DESCRIÇÃO/RESUMO QUE ACOMPANHA A LARGURA DO VÍDEO -->
+                    <!-- 3. RESUMO/SINOPSE DA RESENHA -->
                     <p class="resenha-descricao">
                         <?= htmlspecialchars($resumo_utf8); ?>
                     </p>
 
-                    <!-- BOTÃO DIRETO PARA BUSCAR O LIVRO -->
+                    <!-- Link direto para localizar o livro na loja -->
                     <a href="<?= BASE_URL; ?>compras.php?busca=<?= urlencode($titulo_utf8); ?>" class="btn-foxy">
                          Buscar este Livro na Loja
                     </a>
@@ -229,7 +243,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     <?php endif; ?>
 
-    <!-- SEÇÃO 2: FEED DA COMUNIDADE -->
+    <!-- SEÇÃO 2: OPINIÕES E RESENHAS ESCRITAS PELA COMUNIDADE -->
     <div style="margin-top: 40px; margin-bottom: 15px;">
         <h3 style="font-size: 22px; font-weight: 800; color: var(--text-dark);">
              Opiniões e Resenhas dos Leitores
@@ -238,6 +252,7 @@ require_once __DIR__ . '/../includes/header.php';
 
     <?php if (count($postagens_comunidade) > 0): ?>
         <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px;">
+            <!-- Loop que renderiza as publicações de texto dos leitores -->
             <?php foreach ($postagens_comunidade as $post): ?>
                 <?php 
                     $livro_post_utf8 = $post['livro_nome'] ?? '';
@@ -265,6 +280,7 @@ require_once __DIR__ . '/../includes/header.php';
                         Por: <strong><?= htmlspecialchars($autor_post_utf8); ?></strong> em <?= date('d/m/Y \à\s H:i', strtotime($post['criado_em'])); ?>
                     </p>
 
+                    <!-- Preserva as quebras de linha digitadas no texto com nl2br -->
                     <p style="font-size: 14px; color: var(--text-dark); line-height: 1.6; margin: 0;">
                         <?= nl2br(htmlspecialchars($comentario_utf8)); ?>
                     </p>
@@ -279,5 +295,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 </main>
 
+<!-- Carrega o rodapé do site -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 

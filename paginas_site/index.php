@@ -1,31 +1,34 @@
 
 <?php 
+// Conecta ao banco de dados e traz as configurações gerais do sistema
 require_once __DIR__ . '/../config/db.php';
 
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
+// Se a rota BASE_URL não tiver sido definida no db.php, define o caminho padrão para evitar links quebrados
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
-// Carrega o cabeçalho
+// Carrega o topo visual e o menu de navegação do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
+<!-- ÁREA PRINCIPAL DA PÁGINA INICIAL (INDEX) -->
 <main class="main-container">
 
     <!-- MENSAGEM DE SUCESSO DE COMPRA FINALIZADA -->
+    <!-- Exibe a barra verde de confirmação caso venha o parâmetro de sucesso via URL -->
     <?php if (isset($_GET['sucesso']) && $_GET['sucesso'] === 'compra_finalizada'): ?>
         <div style="max-width: 1100px; margin: 0 auto 25px auto; background-color: #DCFCE7; color: #15803D; padding: 16px 22px; border-radius: 12px; border: 1.5px solid #86EFAC; font-weight: 800; text-align: center; font-size: 15px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.15);">
              Compra finalizada com sucesso! O seu pedido foi registrado e em breve será processado.
         </div>
     <?php endif; ?>
 
-    <!-- SEÇÃO DE APRESENTAÇÃO COM A NOVA LOGO -->
+    <!-- SEÇÃO HERO DE APRESENTAÇÃO E PROPÓSITO DO SITE -->
     <section class="hero-section">
-        <!-- Logo oficial com fundo suave lilás e padding -->
+        <!-- Logo oficial com caixa de fundo suave -->
         <img src="/projetointegrador_tocaleitura/img_site/logo_toca.png" alt="A Toca de Leitura" class="hero-img" style="background: #FAF5FF; padding: 10px;">
 
-        <!-- Descrição do site -->
+        <!-- Texto explicativo sobre o surgimento do projeto -->
         <div class="hero-content">
             <h2>Seja bem-vindo(a) à Toca de Leitura! </h2>
             
@@ -37,22 +40,26 @@ require_once __DIR__ . '/../includes/header.php';
                 A nossa "Toca" foi desenhada para centralizar toda essa experiência! Em nosso espaço, você pode acompanhar seu progresso diário de leitura, compartilhar suas opiniões no feed comunitário, descobrir tendências da literatura e assistir a análises em vídeo de forma simples e intuitiva.
             </p>
 
+            <!-- Botões dinâmicos de chamada para ação de acordo com o login -->
             <div style="margin-top: 18px;">
                 <?php if (!isset($_SESSION['usuario_id'])): ?>
+                    <!-- Se o leitor for visitante, mostra o botão de cadastro -->
                     <a href="<?= BASE_URL; ?>cadastrar.php" class="btn-foxy"> Criar Conta</a>
                 <?php else: ?>
+                    <!-- Se já estiver logado, redireciona direto para a loja de livros -->
                     <a href="<?= BASE_URL; ?>compras.php" class="btn-foxy"> Explorar Livros do Mercado</a>
                 <?php endif; ?>
             </div>
         </div>
     </section>
 
-    <!-- GUIA RÁPIDO DOS RECURSOS DO SITE -->
+    <!-- GUIA RÁPIDO DE RECURSOS E NAVEGAÇÃO -->
     <section class="card-box">
         <h3 class="section-title" style="margin-bottom: 20px;">
             <span> Explore todas as seções do nosso site:</span>
         </h3>
 
+        <!-- Lista de atalhos para os módulos do projeto -->
         <ul class="guia-lista">
             <li class="guia-item">
                 <span> <strong>Compras e Catálogo:</strong> Explore nosso acervo filtrado por gêneros como Romance, Ficção, Suspense, Terror, Mangás/HQs e Literatura Infantil.</span>
@@ -74,7 +81,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <a href="<?= BASE_URL; ?>contato.php" class="guia-link">Contate-nos →</a>
             </li>
 
-            <!-- Links dinâmicos baseados no estado da sessão do usuário -->
+            <!-- Links dinâmicos liberados apenas para usuários autenticados -->
             <?php if (isset($_SESSION['usuario_id'])): ?>
                 <li class="guia-item">
                     <span> <strong>Feed Interativo:</strong> Publique suas impressões sobre o livro que está lendo e veja o que seus amigos estão achando.</span>
@@ -86,6 +93,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <a href="<?= BASE_URL; ?>atualizar_status.php" class="guia-link">Atualizar Meu Status →</a>
                 </li>
             <?php else: ?>
+                <!-- Bloco de atalho para cadastro/login caso o visitante não esteja logado -->
                 <li class="guia-item" style="background-color: #FAF5FF; border-color: var(--border-soft);">
                     <span> <strong>Entre para a Comunidade:</strong> Para publicar no feed e registrar seu progresso de leitura, cadastre-se ou faça login.</span>
                     <div style="display: flex; gap: 8px;">
@@ -99,5 +107,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 </main>
 
+<!-- Carrega o rodapé do site -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 

@@ -93,31 +93,42 @@ CREATE TABLE itens_pedido (
     preco_unitario DECIMAL(10, 2) NOT NULL
 );
 
+
+-- TABELA DE PEDIDOS: Guarda o registro principal das compras realizadas
+
 CREATE TABLE IF NOT EXISTS pedidos (
-    id SERIAL PRIMARY KEY,
-    usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE,
-    total DECIMAL(10, 2) NOT NULL,
-    data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(50) DEFAULT 'Concluído'
+    id SERIAL PRIMARY KEY,                                    -- Chave primária autoincrementada do pedido
+    usuario_id INT REFERENCES usuarios(id) ON DELETE CASCADE, -- Liga o pedido ao leitor (se o leitor for excluído, apaga os pedidos dele)
+    total DECIMAL(10, 2) NOT NULL,                            -- Valor total final acumulado do pedido em reais
+    data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,          -- Registra automaticamente a data e hora do fechamento da compra
+    status VARCHAR(50) DEFAULT 'Concluído'                    -- Estado atual do pedido no sistema
 );
+
+-- TABELA DE ITENS DO PEDIDO: Detalha cada livro contido na compra
 
 CREATE TABLE IF NOT EXISTS itens_pedido (
-    id SERIAL PRIMARY KEY,
-    pedido_id INT REFERENCES pedidos(id) ON DELETE CASCADE,
-    livro_id INT REFERENCES livros(id) ON DELETE SET NULL,
-    quantidade INT NOT NULL,
-    preco_unitario DECIMAL(10, 2) NOT NULL
+    id SERIAL PRIMARY KEY,                                      -- Identificador único do item do pedido
+    pedido_id INT REFERENCES pedidos(id) ON DELETE CASCADE,     -- Vincula ao pedido pai (se o pedido for apagado, remove os itens juntos)
+    livro_id INT REFERENCES livros(id) ON DELETE SET NULL,      -- Liga ao livro (se o livro for apagado do acervo, mantém o item no histórico zerando o id)
+    quantidade INT NOT NULL,                                    -- Quantidade de unidades compradas deste mesmo livro
+    preco_unitario DECIMAL(10, 2) NOT NULL                      -- Preço do livro congelado no momento exato em que a compra foi feita
 );
 
+
+-- ATUALIZAÇÃO DA TABELA DE CONTATO: Adiciona suporte a respostas do admin
+
+-- Inclui os campos de vínculo com o leitor, resposta da administração, data da resposta e status do atendimento
 ALTER TABLE mensagens_contato 
 ADD COLUMN IF NOT EXISTS usuario_id INT REFERENCES usuarios(id) ON DELETE SET NULL,
 ADD COLUMN IF NOT EXISTS resposta_admin TEXT,
 ADD COLUMN IF NOT EXISTS data_resposta TIMESTAMP,
 ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'Pendente';
 
+-- Registra a data e hora do envio do formulário de contato
 ALTER TABLE mensagens_contato 
 ADD COLUMN IF NOT EXISTS data_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
+-- Garante que todas as colunas necessárias para o suporte (assunto, resposta, status, envio) estejam presentes no banco
 ALTER TABLE mensagens_contato 
 ADD COLUMN IF NOT EXISTS usuario_id INT REFERENCES usuarios(id) ON DELETE SET NULL,
 ADD COLUMN IF NOT EXISTS assunto VARCHAR(255),
@@ -126,6 +137,10 @@ ADD COLUMN IF NOT EXISTS data_resposta TIMESTAMP,
 ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'Pendente',
 ADD COLUMN IF NOT EXISTS data_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
+
+-- SINCRONIZAÇÃO DE MENSAGENS ANTIGAS
+
+-- Associa automaticamente o ID do usuário às mensagens de contato enviadas anteriormente comparando o e-mail cadastrado
 UPDATE mensagens_contato m
 SET usuario_id = u.id
 FROM usuarios u

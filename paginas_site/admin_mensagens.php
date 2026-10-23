@@ -1,37 +1,41 @@
 
 <?php
+// Carrega o banco de dados e as funções gerais da plataforma
 require_once __DIR__ . '/../config/db.php';
 
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
+// Se a rota BASE_URL não tiver sido criada no db.php, define o caminho padrão
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
-// Bloqueia acesso de usuários que não são administradores
+// Bloqueio de segurança: restringe esta tela apenas a contas de administradores
 if (function_exists('verificar_admin')) {
     verificar_admin();
 } else {
     iniciar_sessao();
+    // Se a sessão não for de admin, manda de volta para a página principal
     if (empty($_SESSION['is_admin'])) {
         header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
 
+// Variáveis para guardar mensagens de sucesso ou alerta de erro
 $mensagem_sucesso = '';
 $erro = '';
 
-// PROCESSAMENTO DE AÇÕES DO ADMINISTRADOR (RESPONDER OU EXCLUIR)
+// PROCESSAMENTO DE AÇÕES: Executa quando o admin envia o formulário (responder ou excluir)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao   = $_POST['acao'] ?? '';
     $msg_id = (int)($_POST['mensagem_id'] ?? 0);
 
-    // 1. AÇÃO: RESPONDER MENSAGEM
+    // 1. AÇÃO: RESPONDER A UMA MENSAGEM DO LEITOR
     if ($acao === 'responder' && $msg_id > 0) {
         $resposta = trim($_POST['resposta_admin'] ?? '');
 
         if (!empty($resposta)) {
             try {
+                // Grava a resposta, registra a data/hora atual e atualiza o status para 'Respondida'
                 $stmt = $pdo->prepare("
                     UPDATE mensagens_contato 
                     SET resposta_admin = ?, data_resposta = CURRENT_TIMESTAMP, status = 'Respondida' 
@@ -43,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $erro = "Não foi possível salvar a resposta.";
                 }
             } catch (PDOException $e) {
-                // Contingência para tabela alternativa 'mensagens'
+                // Plano B: tenta atualizar na tabela alternativa 'mensagens' se a principal não existir
                 try {
                     $stmt = $pdo->prepare("
                         UPDATE mensagens 
@@ -61,9 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 2. AÇÃO: EXCLUIR MENSAGEM
+    // 2. AÇÃO: EXCLUIR MENSAGEM DO BANCO
     if ($acao === 'excluir' && $msg_id > 0) {
         try {
+            // Apaga o registro da tabela principal 'mensagens_contato'
             $stmt = $pdo->prepare("DELETE FROM mensagens_contato WHERE id = ?");
             if ($stmt->execute([$msg_id])) {
                 $mensagem_sucesso = "Mensagem #{$msg_id} excluída com sucesso!";
@@ -71,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $erro = "Erro ao excluir a mensagem.";
             }
         } catch (PDOException $e) {
+            // Plano B: tenta apagar da tabela alternativa 'mensagens'
             try {
                 $stmt = $pdo->prepare("DELETE FROM mensagens WHERE id = ?");
                 $stmt->execute([$msg_id]);
@@ -82,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// BUSCA TODAS AS MENSAGENS RECEBIDAS NO BANCO DE DADOS
+// CONSULTA AO BANCO: Busca todas as mensagens recebidas e faz LEFT JOIN para pegar o nome caso seja usuário logado
 $mensagens = [];
 $has_mensagens_table = true;
 
@@ -93,6 +99,7 @@ try {
             ORDER BY m.id DESC";
     $mensagens = $pdo->query($sql)->fetchAll();
 } catch (PDOException $e) {
+    // Plano B: busca na tabela 'mensagens' se a 'mensagens_contato' não for encontrada
     try {
         $sql = "SELECT m.*, u.nome AS nome_usuario 
                 FROM mensagens m
@@ -100,19 +107,21 @@ try {
                 ORDER BY m.id DESC";
         $mensagens = $pdo->query($sql)->fetchAll();
     } catch (PDOException $ex) {
+        // Se nenhuma das duas tabelas existir, ativa o aviso de estrutura ausente
         $has_mensagens_table = false;
     }
 }
 
+// Inclui o cabeçalho visual da página
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
+<!-- ÁREA PRINCIPAL DA PÁGINA -->
 <main class="page-admin-mensagens-bg">
 
     <section class="admin-mensagens-container">
         
-        <!-- CABEÇALHO DA PÁGINA -->
+        <!-- Título do Painel de Atendimento -->
         <div style="margin-bottom: 25px;">
             <h2 style="font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
                  Painel de Atendimento ao Leitor
@@ -122,32 +131,36 @@ require_once __DIR__ . '/../includes/header.php';
             </p>
         </div>
 
-        <!-- MENSAGENS DE FEEDBACK VISUAL -->
+        <!-- Alerta verde de confirmação ao responder ou excluir -->
         <?php if (!empty($mensagem_sucesso)): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
                  <?= htmlspecialchars($mensagem_sucesso); ?>
             </div>
         <?php endif; ?>
 
+        <!-- Alerta amarelo para erros de preenchimento ou banco -->
         <?php if (!empty($erro)): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
                  <?= htmlspecialchars($erro); ?>
             </div>
         <?php endif; ?>
 
+        <!-- Aviso exibido caso a tabela de mensagens ainda não tenha sido criada no banco -->
         <?php if (!$has_mensagens_table): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 16px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-size: 14px;">
                  <strong>Aviso:</strong> A tabela de mensagens (<code>mensagens_contato</code> ou <code>mensagens</code>) ainda não foi encontrada no seu banco de dados local.
             </div>
         <?php endif; ?>
 
-        <!-- CARDS DE ATENDIMENTO DAS MENSAGENS -->
+        <!-- LISTAGEM DAS MENSAGENS EM FORMATO DE CARDS -->
         <?php if (!empty($mensagens)): ?>
             <?php foreach ($mensagens as $msg): 
+                // Formata a data e hora do envio da mensagem
                 $raw_data_envio = $msg['data_envio'] ?? $msg['criado_em'] ?? $msg['data'] ?? null;
                 $data_envio     = $raw_data_envio ? date('d/m/Y \à\s H:i', strtotime($raw_data_envio)) : 'Recente';
                 $ja_respondido  = !empty($msg['resposta_admin']);
                 
+                // Trata a acentuação (UTF-8) do nome, e-mail, assunto e conteúdo recebido
                 $nome_leitor_raw  = $msg['nome'] ?? $msg['nome_usuario'] ?? 'Visitante';
                 $nome_leitor      = mb_convert_encoding($nome_leitor_raw, 'UTF-8', 'ISO-8859-1');
                 
@@ -163,9 +176,10 @@ require_once __DIR__ . '/../includes/header.php';
                 $resposta_admin_raw = $msg['resposta_admin'] ?? '';
                 $resposta_admin     = mb_convert_encoding($resposta_admin_raw, 'UTF-8', 'ISO-8859-1');
             ?>
+                <!-- Card individual de atendimento -->
                 <div style="background-color: #FFFFFF; border: 1.5px solid <?= $ja_respondido ? '#86EFAC' : 'var(--border-soft)'; ?>; border-radius: var(--radius-card); padding: 22px; margin-bottom: 25px; box-shadow: var(--shadow-card); transition: all 0.2s ease;">
                     
-                    <!-- CABEÇALHO DO CARD -->
+                    <!-- Topo do Card: Nome do leitor, e-mail e selo de status (Respondida / Pendente) -->
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1.5px solid var(--border-soft); padding-bottom: 12px; margin-bottom: 15px;">
                         <div>
                             <span style="font-size: 16px; font-weight: 800; color: var(--text-dark);"> <?= htmlspecialchars($nome_leitor); ?></span>
@@ -173,6 +187,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 (&lt;<a href="mailto:<?= htmlspecialchars($email_leitor); ?>" style="color: var(--fox-purple); text-decoration: underline;"><?= htmlspecialchars($email_leitor); ?></a>&gt;)
                             </span>
                             
+                            <!-- Selo exibido se a mensagem veio de um usuário cadastrado no sistema -->
                             <?php if (!empty($msg['nome_usuario']) || !empty($msg['usuario_id'])): ?>
                                 <span style="font-size: 11px; background-color: #FAF5FF; color: var(--fox-purple); font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border-soft); margin-left: 8px;">
                                      Usuário Cadastrado
@@ -183,6 +198,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;"> <?= $data_envio; ?></span>
                             
+                            <!-- Badges visuais de status da mensagem -->
                             <?php if ($ja_respondido): ?>
                                 <span style="background-color: #DCFCE7; color: #15803D; padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 11px; text-transform: uppercase;">
                                      Respondida
@@ -195,7 +211,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
 
-                    <!-- ASSUNTO E MENSAGEM DO LEITOR -->
+                    <!-- Exibição do assunto e do texto enviado pelo leitor -->
                     <div style="margin-bottom: 15px;">
                         <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 800; color: var(--text-dark);">
                              Assunto: <span style="color: var(--fox-purple);"><?= htmlspecialchars($assunto); ?></span>
@@ -207,7 +223,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
 
-                    <!-- RESPOSTA ANTERIOR DO ADMIN (SE HOUVER) -->
+                    <!-- Bloco verde exibido quando a mensagem já possui uma resposta salva -->
                     <?php if ($ja_respondido): ?>
                         <div style="background-color: #F0FDF4; padding: 14px 16px; border-left: 4px solid #16A34A; border-radius: 0 10px 10px 0; margin-bottom: 15px; font-size: 13px; line-height: 1.5;">
                             <strong style="color: #15803D;">
@@ -217,7 +233,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     <?php endif; ?>
 
-                    <!-- FORMULÁRIO DE RESPOSTA EXPANSÍVEL & BOTAO EXCLUIR -->
+                    <!-- Formulário expansível (<details>) para escrever ou editar a resposta -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px; border-top: 1px dashed var(--border-soft); padding-top: 15px;">
                         <details style="flex: 1;" <?= !$ja_respondido ? 'open' : ''; ?>>
                             <summary style="cursor: pointer; color: var(--fox-purple); font-weight: 800; font-size: 13px; user-select: none;">
@@ -236,7 +252,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </form>
                         </details>
 
-                        <!-- FORMULÁRIO DE EXCLUSÃO -->
+                        <!-- Botão de exclusão permanente com confirmação em JavaScript -->
                         <form action="<?= BASE_URL; ?>admin_mensagens.php" method="POST" onsubmit="return confirm('Deseja realmente apagar esta mensagem permanentemente?');" style="margin-left: 15px;">
                             <input type="hidden" name="acao" value="excluir">
                             <input type="hidden" name="mensagem_id" value="<?= $msg['id']; ?>">
@@ -249,12 +265,14 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
             <?php endforeach; ?>
         <?php elseif ($has_mensagens_table): ?>
+            <!-- Mensagem amigável exibida quando não há contatos de leitores gravados -->
             <div style="text-align: center; padding: 40px 20px; background-color: #FAF5FF; border: 1.5px dashed var(--border-soft); border-radius: 12px; color: var(--text-muted);">
                 <p style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Nenhuma mensagem de suporte recebida até o momento.</p>
                 <p style="font-size: 13px; margin: 0;">As dúvidas e contatos enviados pelos leitores aparecerão automaticamente aqui.</p>
             </div>
         <?php endif; ?>
 
+        <!-- Link para retornar ao menu principal do painel administrativo -->
         <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
             <a href="<?= BASE_URL; ?>admin.php">← Voltar ao Painel do Administrador</a>
         </div>
@@ -263,5 +281,6 @@ require_once __DIR__ . '/../includes/header.php';
 
 </main>
 
+<!-- Inclui o rodapé visual do site -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 

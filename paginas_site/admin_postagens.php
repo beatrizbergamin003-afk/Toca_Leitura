@@ -1,29 +1,35 @@
 
 <?php 
+// Carrega o banco de dados e as funções globais do sistema
 require_once __DIR__ . '/../config/db.php';
 
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
+// Se a rota BASE_URL ainda não tiver sido criada no db.php, define o caminho padrão aqui
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
+// Trava de segurança: garante que apenas administradores consigam acessar a moderação do feed
 if (function_exists('verificar_admin')) {
     verificar_admin();
 } else {
     iniciar_sessao();
+    // Se não for admin, bloqueia o acesso e manda de volta para a página inicial
     if (empty($_SESSION['is_admin'])) {
         header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
 }
 
+// Variáveis para controlar os alertas de mensagem na tela
 $mensagem = '';
 $erro = '';
 
-// AÇÃO: EXCLUIR PUBLICAÇÃO DO FEED
+// MODERAÇÃO DO FEED: Executa quando o administrador decide remover uma publicação
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'excluir') {
+    // Pega o ID da publicação enviada no formulário e converte em número inteiro por segurança
     $post_id = (int)($_POST['post_id'] ?? 0);
     if ($post_id > 0) {
+        // Prepara o comando SQL para deletar a publicação específica no banco de dados
         $stmt = $pdo->prepare("DELETE FROM postagens_feed WHERE id = ?");
         if ($stmt->execute([$post_id])) {
             $mensagem = "Publicação removida com sucesso do feed.";
@@ -33,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     }
 }
 
-// Busca todas as postagens unindo com os dados do usuário
+// CONSULTA AO BANCO: Busca todas as postagens unindo (JOIN) com a tabela de usuários para mostrar o nome do autor
 $stmt = $pdo->query("
     SELECT p.*, u.nome 
     FROM postagens_feed p
@@ -42,15 +48,16 @@ $stmt = $pdo->query("
 ");
 $posts = $stmt->fetchAll();
 
+// Inclui o cabeçalho e menu principal do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- CONTAINER PRINCIPAL COM A IMAGEM DE FUNDO -->
+<!-- ÁREA PRINCIPAL DA PÁGINA -->
 <main class="page-admin-livros-bg">
 
     <section class="admin-livros-container">
         
-        <!-- CABEÇALHO DA PÁGINA -->
+        <!-- Título da tela de moderação do feed -->
         <div style="margin-bottom: 25px;">
             <h2 style="font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">
                 Gerenciamento de Publicações do Feed
@@ -60,24 +67,26 @@ require_once __DIR__ . '/../includes/header.php';
             </p>
         </div>
 
-        <!-- MENSAGENS DE FEEDBACK VISUAL -->
+        <!-- Alerta verde de confirmação ao apagar uma publicação -->
         <?php if (!empty($mensagem)): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
                 <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
+        <!-- Alerta amarelo exibido caso ocorra algum erro na exclusão -->
         <?php if (!empty($erro)): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center; font-size: 14px;">
                 <?= htmlspecialchars($erro); ?>
             </div>
         <?php endif; ?>
 
-        <!-- TABELA DE POSTAGENS CADASTRADAS -->
+        <!-- Exibe a contagem total de publicações encontradas no feed -->
         <h3 style="font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 15px;">
             Todas as Publicações (<?= count($posts); ?>)
         </h3>
 
+        <!-- TABELA DE MODERAÇÃO DE CONTEÚDO -->
         <?php if (!empty($posts)): ?>
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; background-color: #FFFFFF; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--border-soft);">
@@ -93,12 +102,14 @@ require_once __DIR__ . '/../includes/header.php';
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Percorre todas as postagens do banco para desenhar cada linha da tabela -->
                         <?php foreach ($posts as $post): ?>
                             <?php 
                                 $nome_usuario = $post['nome'] ?? 'Leitor';
                                 $livro_nome   = $post['livro_nome'] ?? '';
                                 $comentario   = $post['comentario'] ?? '';
                                 $categoria    = $post['aba_categoria'] ?? 'Geral';
+                                // Formata a data de criação para o padrão brasileiro (Dia/Mês/Ano Hora:Minuto)
                                 $data_post    = !empty($post['criado_em']) ? date('d/m/Y H:i', strtotime($post['criado_em'])) : '-';
                             ?>
                             <tr style="border-bottom: 1px solid var(--border-soft); font-size: 14px;">
@@ -119,6 +130,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <?= $data_post; ?>
                                 </td>
                                 <td style="padding: 10px; text-align: center;">
+                                    <!-- Form individual de exclusão da postagem com confirmação em JavaScript -->
                                     <form action="<?= BASE_URL; ?>admin_postagens.php" method="POST" onsubmit="return confirm('Tem certeza que deseja remover esta publicação do feed?');" style="display: inline;">
                                         <input type="hidden" name="acao" value="excluir">
                                         <input type="hidden" name="post_id" value="<?= $post['id']; ?>">
@@ -133,11 +145,13 @@ require_once __DIR__ . '/../includes/header.php';
                 </table>
             </div>
         <?php else: ?>
+            <!-- Mensagem amigável exibida quando o feed ainda não possui publicações -->
             <div style="text-align: center; padding: 30px; background-color: #FAF5FF; border: 1.5px dashed var(--border-soft); border-radius: 12px; color: var(--text-muted);">
                 <p style="font-size: 15px; font-weight: 700; margin: 0;">Nenhuma publicação encontrada no feed.</p>
             </div>
         <?php endif; ?>
 
+        <!-- Link para voltar ao menu do painel do administrador -->
         <div class="cadastro-footer" style="margin-top: 25px; text-align: left;">
             <a href="<?= BASE_URL; ?>admin.php">&larr; Voltar ao Painel do Administrador</a>
         </div>
@@ -146,5 +160,5 @@ require_once __DIR__ . '/../includes/header.php';
 
 </main>
 
+<!-- Carregamento do rodapé do site -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-

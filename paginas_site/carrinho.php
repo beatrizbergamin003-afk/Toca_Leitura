@@ -1,30 +1,33 @@
 
 <?php 
+// Puxa as configurações do banco de dados e abre/recupera a sessão do usuário
 require_once __DIR__ . '/../config/db.php';
 iniciar_sessao();
 
+// Trava de segurança: se o leitor não estiver logado, redireciona para a tela de login
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: /projetointegrador_tocaleitura/paginas_site/login.php");
     exit;
 }
 
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
+// Se a rota BASE_URL não foi definida no db.php, cria a rota padrão das páginas
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
-// Inicializa o carrinho se não existir
+// Inicializa a estrutura do carrinho na sessão como uma lista vazia caso ainda não exista
 if (!isset($_SESSION['carrinho']) || !is_array($_SESSION['carrinho'])) {
     $_SESSION['carrinho'] = [];
 }
 
-// ============================================================
+
 // 1. PROCESSAMENTO DAS AÇÕES DO CARRINHO (Atualizar / Remover / Limpar)
-// ============================================================
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     $livro_id = (int)($_POST['livro_id'] ?? 0);
     $acao     = $_POST['acao'];
 
+    // Altera a quantidade de um livro específico ou o remove se a quantidade for zerada
     if ($acao === 'atualizar') {
         $qtd = (int)($_POST['quantidade'] ?? 1);
         if ($qtd > 0) {
@@ -33,30 +36,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
             unset($_SESSION['carrinho'][$livro_id]);
         }
     } elseif ($acao === 'remover') {
+        // Apaga apenas o livro selecionado da sessão
         unset($_SESSION['carrinho'][$livro_id]);
     } elseif ($acao === 'limpar') {
+        // Esvazia completamente o carrinho de compras
         $_SESSION['carrinho'] = [];
     }
 
+    // Redireciona de volta para o carrinho (Padrão Post/Redirect/Get para evitar reenvio de formulário ao atualizar a página)
     header("Location: " . BASE_URL . "carrinho.php");
     exit;
 }
 
-// ============================================================
+
 // 2. CONSULTA DOS LIVROS DO CARRINHO NO BANCO DE DADOS
-// ============================================================
+
 $livros_carrinho = [];
 $total_carrinho  = 0;
+// Pega os IDs de todos os livros guardados no carrinho da sessão
 $ids_carrinho    = array_keys($_SESSION['carrinho']);
 
 if (!empty($ids_carrinho)) {
+    // Cria pontos de interrogação (?) dinâmicos para montar a cláusula IN do SQL de forma segura
     $placeholders = implode(',', array_fill(0, count($ids_carrinho), '?'));
     
     try {
+        // Busca de uma só vez no banco todos os livros cujos IDs estão no carrinho
         $stmt = $pdo->prepare("SELECT * FROM livros WHERE id IN ($placeholders)");
         $stmt->execute($ids_carrinho);
         $livros_banco = $stmt->fetchAll();
 
+        // Monta a estrutura de dados de cada item calculando preço, quantidade e subtotal
         foreach ($livros_banco as $livro) {
             $id       = $livro['id'];
             $qtd      = $_SESSION['carrinho'][$id] ?? 1;
@@ -64,6 +74,7 @@ if (!empty($ids_carrinho)) {
             $subtotal = $preco * $qtd;
             $total_carrinho += $subtotal;
 
+            // Formata o caminho da imagem de capa (URL externa ou arquivo local na pasta img_site)
             $capa = $livro['capa_url'] ?? $livro['imagem'] ?? '';
             if (!empty($capa)) {
                 $src_imagem = (str_starts_with($capa, 'http://') || str_starts_with($capa, 'https://')) 
@@ -73,6 +84,7 @@ if (!empty($ids_carrinho)) {
                 $src_imagem = '/projetointegrador_tocaleitura/img_site/logo_toca.png';
             }
 
+            // Armazena as informações organizadas no array que será exibido na tabela HTML
             $livros_carrinho[] = [
                 'id'         => $id,
                 'titulo'     => $livro['titulo'] ?? '',
@@ -88,10 +100,11 @@ if (!empty($ids_carrinho)) {
     }
 }
 
+// Carrega o topo visual e o menu de navegação do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- Injeta a imagem prateleira.jpg no plano de fundo do carrinho -->
+<!-- Injeta a imagem prateleira.jpg no plano de fundo do carrinho via CSS inline -->
 <style>
     body {
         background: url('/projetointegrador_tocaleitura/img_site/prateleira.jpg') no-repeat center center fixed !important;
@@ -99,6 +112,7 @@ require_once __DIR__ . '/../includes/header.php';
     }
 </style>
 
+<!-- ÁREA PRINCIPAL DO CARRINHO DE COMPRAS -->
 <main class="page-carrinho-bg">
 
     <!-- CABEÇALHO DA PÁGINA COM SOMBRA NO TEXTO -->
@@ -111,21 +125,23 @@ require_once __DIR__ . '/../includes/header.php';
         </p>
     </div>
 
-    <!-- MENSAGEM DE ERRO CASO HOUVER -->
+    <!-- MENSAGEM DE ERRO EXIBIDA CASO VENHA ALGUM ALERTA VIA GET -->
     <?php if (isset($_GET['erro'])): ?>
         <div style="max-width: 800px; margin: 0 auto 20px auto; background-color: #FEF3C7; color: #B45309; padding: 14px 20px; border-radius: 12px; border: 1.5px solid #FCD34D; font-weight: 800; text-align: center; font-size: 14px;">
             <?= htmlspecialchars($_GET['erro']); ?>
         </div>
     <?php endif; ?>
 
+    <!-- Se houver livros no carrinho, renderiza a tabela de itens e o resumo -->
     <?php if (!empty($livros_carrinho)): ?>
 
-        <!-- AÇÕES DO TOPO COM ESTILO ROXO MÁGICO -->
+        <!-- BARRA DE AÇÕES SUPERIOR: Botão de voltar e botão para esvaziar o carrinho -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
             <a href="<?= BASE_URL; ?>compras.php" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; text-decoration: none;">
                 &larr; Continuar Comprando
             </a>
 
+            <!-- Form para limpar todo o carrinho com confirmação via JavaScript -->
             <form action="<?= BASE_URL; ?>carrinho.php" method="POST" onsubmit="return confirm('Tem certeza que deseja esvaziar todo o carrinho?');">
                 <input type="hidden" name="acao" value="limpar">
                 <button type="submit" class="btn-foxy" style="font-size: 12px; padding: 8px 18px; cursor: pointer;">
@@ -134,7 +150,7 @@ require_once __DIR__ . '/../includes/header.php';
             </form>
         </div>
 
-        <!-- TABELA ESTILIZADA DE ITENS DO CARRINHO -->
+        <!-- TABELA DE EXIBIÇÃO DOS ITENS DO CARRINHO -->
         <div class="tabela-container-compras" style="background-color: rgba(255, 255, 255, 0.93) !important; backdrop-filter: blur(6px);">
             <table class="tabela-compras">
                 <thead>
@@ -148,19 +164,21 @@ require_once __DIR__ . '/../includes/header.php';
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- Loop que desenha cada linha de livro na tabela -->
                     <?php foreach ($livros_carrinho as $item): 
+                        // Corrige acentuação UTF-8 no título e no autor do livro
                         $titulo_utf8 = function_exists('fix_utf8') ? fix_utf8($item['titulo']) : $item['titulo'];
                         $autor_utf8  = function_exists('fix_utf8') ? fix_utf8($item['autor']) : $item['autor'];
                     ?>
                         <tr>
-                            <!-- 1. CAPA -->
+                            <!-- 1. CAPA DO LIVRO -->
                             <td class="col-capa">
                                 <img src="<?= htmlspecialchars($item['imagem']); ?>" 
                                      alt="<?= htmlspecialchars($titulo_utf8); ?>"
                                      onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo_toca.png';">
                             </td>
 
-                            <!-- 2. TÍTULO E AUTOR -->
+                            <!-- 2. TÍTULO E AUTOR DO LIVRO -->
                             <td class="col-titulo">
                                 <div style="font-size: 15px; font-weight: 800; color: var(--text-dark);">
                                     <?= htmlspecialchars($titulo_utf8); ?>
@@ -170,12 +188,12 @@ require_once __DIR__ . '/../includes/header.php';
                                 </div>
                             </td>
 
-                            <!-- 3. PREÇO UNITÁRIO -->
+                            <!-- 3. PREÇO UNITÁRIO FORMATADO EM REAIS -->
                             <td style="font-weight: 700; color: var(--text-dark);">
                                 R$ <?= number_format($item['preco'], 2, ',', '.'); ?>
                             </td>
 
-                            <!-- 4. QUANTIDADE COM FORMULÁRIO RÁPIDO -->
+                            <!-- 4. CONTROLE DE QUANTIDADE VIA FORMULÁRIO RÁPIDO -->
                             <td>
                                 <form action="<?= BASE_URL; ?>carrinho.php" method="POST" style="display: inline-flex; align-items: center; gap: 6px;">
                                     <input type="hidden" name="acao" value="atualizar">
@@ -188,12 +206,12 @@ require_once __DIR__ . '/../includes/header.php';
                                 </form>
                             </td>
 
-                            <!-- 5. SUBTOTAL DO ITEM -->
+                            <!-- 5. SUBTOTAL CALCULADO DO ITEM (QUANTIDADE x PREÇO) -->
                             <td class="col-preco">
                                 R$ <?= number_format($item['subtotal'], 2, ',', '.'); ?>
                             </td>
 
-                            <!-- 6. REMOVER ITEM -->
+                            <!-- 6. BOTÃO PARA REMOVER O ITEM INDIVIDUALMENTE -->
                             <td>
                                 <form action="<?= BASE_URL; ?>carrinho.php" method="POST" style="display: inline;">
                                     <input type="hidden" name="acao" value="remover">
@@ -218,14 +236,17 @@ require_once __DIR__ . '/../includes/header.php';
                     Resumo do Pedido
                 </h3>
 
+                <!-- Contagem total de itens somando todas as quantidades no carrinho -->
                 <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">
                     Total de Livros: <strong><?= array_sum($_SESSION['carrinho']); ?> item(ns)</strong>
                 </p>
 
+                <!-- Exibe o valor total acumulado do carrinho -->
                 <p style="font-size: 22px; font-weight: 900; color: var(--fox-purple, #6D28D9); margin-bottom: 20px;">
                     Total: R$ <?= number_format($total_carrinho, 2, ',', '.'); ?>
                 </p>
 
+                <!-- Se o leitor estiver autenticado, ativa o botão de envio para fechar o pedido -->
                 <?php if (isset($_SESSION['usuario_id']) || isset($_SESSION['id'])): ?>
                     <!-- FORMULÁRIO POST PARA FINALIZAR A COMPRA -->
                     <form action="<?= BASE_URL; ?>finalizar_compra.php" method="POST" style="width: 100%;">
@@ -234,6 +255,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </button>
                     </form>
                 <?php else: ?>
+                    <!-- Caso contrário, exige login antes de finalizar -->
                     <a href="<?= BASE_URL; ?>login.php" class="btn-foxy" style="padding: 12px 28px; font-size: 14px; width: 100%; box-sizing: border-box; display: block; text-align: center; text-decoration: none;">
                         Faça Login para Finalizar
                     </a>
@@ -243,7 +265,7 @@ require_once __DIR__ . '/../includes/header.php';
 
     <?php else: ?>
 
-        <!-- ESTADO QUANDO O CARRINHO ESTÁ VAZIO -->
+        <!-- TELA EXIBIDA QUANDO O CARRINHO ESTÁ VAZIO -->
         <div class="card-box" style="text-align: center; padding: 50px 20px; max-width: 550px; margin: 40px auto; border-radius: 22px; background-color: rgba(255, 255, 255, 0.92) !important; backdrop-filter: blur(8px); border: 2px solid var(--border-soft);">
             <img src="/projetointegrador_tocaleitura/img_site/logo_toca.png" alt="A Toca de Leitura" style="width: 110px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));" onerror="this.onerror=null; this.src='/projetointegrador_tocaleitura/img_site/logo.png';">
             
@@ -262,6 +284,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 </main>
 
+<!-- Carrega o rodapé do site -->
 <div style="background-color: #FFFFFF; width: 100%;">
     <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 </div>

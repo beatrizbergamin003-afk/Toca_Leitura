@@ -1,9 +1,10 @@
 
 <?php 
+// Carrega o banco de dados e abre a sessão do usuário
 require_once __DIR__ . '/../config/db.php';
 iniciar_sessao();
 
-// Se o usuário já estiver autenticado, redireciona para o início
+// Se o usuário já estiver logado, redireciona direto para a página inicial
 if (isset($_SESSION['usuario_id'])) {
     header("Location: index.php");
     exit;
@@ -11,37 +12,40 @@ if (isset($_SESSION['usuario_id'])) {
 
 $mensagem = '';
 
+// Processa o formulário quando o usuário clica para cadastrar (método POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Pega os dados digitados e limpa os espaços no início e no fim
     $nome  = trim($_POST['nome'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $senha = trim($_POST['senha'] ?? '');
 
-    // Expressão Regular (Regex) para validação estrita de e-mail:
-    // Exige: nome + @ + domínio (ex: gmail, outlook) + . + pelo menos 2 letras no final
+    // Expressão Regular (Regex) para validar a estrutura do e-mail no PHP:
+    // Exige: texto + @ + domínio + ponto + pelo menos 2 letras no final (ex: .com ou .br)
     $email_regex = '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/';
 
     try {
-        // 1. Validação de campos obrigatórios
+        // 1. Verifica se algum dos três campos ficou em branco
         if (empty($nome) || empty($email) || empty($senha)) {
             throw new Exception("Preencha todos os campos!");
         }
 
-        // 2. Validação Estrita de E-mail por Regex
+        // 2. Valida a estrutura do e-mail no backend com o regex
         if (!preg_match($email_regex, $email)) {
             throw new Exception("E-mail inválido! Por favor, insira um e-mail com domínio e extensão válidos (ex: nome@dominio.com).");
         }
 
-        // 3. Verifica se e-mail já existe no banco de dados
+        // 3. Consulta no banco se o e-mail digitado já foi cadastrado por outra pessoa
         $stmt_check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
         $stmt_check->execute([$email]);
         if ($stmt_check->fetch()) {
             throw new Exception("Este e-mail já está cadastrado no sistema!");
         }
 
-        // 4. Inserção do novo usuário
+        // 4. Criptografa a senha usando hash seguro (password_hash) antes de salvar no banco
         $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
 
+        // Salva o novo usuário e redireciona para o login com aviso de sucesso
         if ($stmt->execute([$nome, $email, $senha_hash])) {
             header("Location: login.php?sucesso=cadastrado");
             exit;
@@ -50,14 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
     } catch (Exception $e) {
+        // Guarda a mensagem de erro gerada nas validações para exibir ao usuário
         $mensagem = $e->getMessage();
     }
 }
 
+// Carrega o topo e o menu de navegação do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- CONTAINER COM A CLASSE DA IMAGEM DE FUNDO -->
+<!-- CONTAINER PRINCIPAL COM O PLANO DE FUNDO DE CADASTRO -->
 <main class="page-cadastro-bg">
     <section class="cadastro-container">
         <div class="cadastro-header">
@@ -65,12 +71,14 @@ require_once __DIR__ . '/../includes/header.php';
             <p>Junte-se à comunidade da Toca de Leitura</p>
         </div>
 
+        <!-- Exibe o alerta vermelho na tela se houver alguma mensagem de erro -->
         <?php if (!empty($mensagem)): ?>
             <div style="background-color: #FFEBEE; color: #C62828; padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 700; text-align: center;">
                 <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
+        <!-- Formulário enviando os dados para o próprio cadastrar.php -->
         <form action="cadastrar.php" method="POST">
             <div class="form-group">
                 <label for="nome">Nome Completo:</label>
@@ -79,6 +87,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div class="form-group">
                 <label for="email">E-mail:</label>
+                <!-- Atributo pattern faz a validação do e-mail também no navegador (HTML5) -->
                 <input type="email" 
                        id="email" 
                        name="email" 
@@ -97,11 +106,12 @@ require_once __DIR__ . '/../includes/header.php';
             <button type="submit" class="btn-foxy btn-submit-block">Cadastrar Conta</button>
         </form>
 
+        <!-- Atalho de navegação para usuários que já possuem conta -->
         <div class="cadastro-footer">
             Já possui uma conta? <a href="login.php">Faça login aqui</a>
         </div>
     </section>
 </main>
 
+<!-- Carrega o rodapé do site -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-

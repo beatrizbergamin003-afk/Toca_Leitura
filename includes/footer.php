@@ -1,15 +1,18 @@
 <?php
-// Garante o fallback de BASE_URL caso não esteja definida no db.php
+// Se a BASE_URL ainda não foi definida no arquivo db.php, define o caminho padrão aqui para os links não quebrarem
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 ?>
+<!-- Linha horizontal para separar o conteúdo do rodapé -->
 <hr>
-<!-- Rodapé do Site -->
+
+<!-- Bloco principal do rodapé da página -->
 <footer class="foot">
-    <!-- Exibe o ano atual dinamicamente via PHP -->
+    <!-- Mostra o símbolo de copyright e pega o ano atual do servidor de forma automática -->
     <p>&copy; <?= date('Y'); ?> <strong>A Toca de Leitura</strong>. Todos os direitos reservados.</p>
     
+    <!-- Links diretos para facilitar a navegação do usuário no final da página -->
     <p>Navegação rápida:
         <a href="<?= BASE_URL; ?>index.php">Início</a> |
         <a href="<?= BASE_URL; ?>compras.php">Compras</a> |
@@ -19,5 +22,6 @@ if (!defined('BASE_URL')) {
     </p>
 </footer>
 
+<!-- Fechamento do corpo da página e da tag principal HTML (que foram abertas no header.php) -->
 </body>
 </html>

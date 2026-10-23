@@ -1,21 +1,18 @@
-
 <?php
-// ============================================================
-// CONFIGURAÇÃO DE CONEXÃO COM O BANCO DE DADOS E FUNÇÕES GLOBAIS
-// ============================================================
+// Configurações do banco de dados e funções gerais do site
 
-// Força o PHP e o Servidor Web a responderem estritamente em UTF-8
+// Define que o site vai usar o padrão de acentuação UTF-8
 ini_set('default_charset', 'UTF-8');
 if (!headers_sent()) {
     header('Content-Type: text/html; charset=utf-8');
 }
 
-// Definição da URL base do projeto
+// Define o caminho padrão das páginas no navegador
 if (!defined('BASE_URL')) {
     define('BASE_URL', '/projetointegrador_tocaleitura/paginas_site/');
 }
 
-// Parâmetros de conexão com o banco PostgreSQL
+// Dados para conectar no banco PostgreSQL local
 $host     = "localhost";
 $port     = "5432";
 $dbname   = "toca_leitura";
@@ -23,34 +20,31 @@ $user     = "raposa";
 $password = "raposa123";
 
 try {
-    // DSN do PostgreSQL configurado com suporte explícito ao charset UTF-8
+    // Monta o endereço de conexão com o banco
     $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;options='--client_encoding=UTF8'";
 
-    // Instancia a conexão PDO configurada para tratamento de erros e fetch associativo
+    // Conecta ao banco de dados e ativa o aviso de erros
     $pdo = new PDO($dsn, $user, $password, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
 
-    // Garante a codificação UTF-8 na sessão do banco PostgreSQL
+    // Reforça o UTF-8 dentro do banco
     $pdo->exec("SET client_encoding TO 'UTF8'");
 
 } catch (PDOException $e) {
+    // Se der erro na conexão, mata o script e exibe a mensagem
     die("Erro na conexão com o PostgreSQL: " . $e->getMessage());
 }
 
-/**
- * Garante a inicialização da sessão de forma segura.
- */
+// Inicia a sessão do usuário se ainda não estiver aberta
 function iniciar_sessao() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
 }
 
-/**
- * Bloqueia o acesso a páginas privadas para visitantes não autenticados.
- */
+// Se o usuário não estiver logado, redireciona para a tela de login
 function verificar_autenticacao() {
     iniciar_sessao();
     if (!isset($_SESSION['usuario_id'])) {
@@ -59,9 +53,7 @@ function verificar_autenticacao() {
     }
 }
 
-/**
- * Bloqueia o acesso a páginas administrativas para quem não é administrador.
- */
+// Se o usuário não for admin, redireciona para a página inicial
 function verificar_admin() {
     iniciar_sessao();
     if (!isset($_SESSION['usuario_id']) || empty($_SESSION['is_admin'])) {
@@ -70,10 +62,7 @@ function verificar_admin() {
     }
 }
 
-/**
- * Corrige automaticamente textos que estejam a sofrer dupla conversão UTF-8.
- * Compatível com PHP 8.2+
- */
+// Corrige palavras que ficarem com acentos estranhos na tela
 function fix_utf8($texto) {
     if (empty($texto)) return '';
     if (strpos($texto, 'Ã') !== false) {
@@ -82,4 +71,3 @@ function fix_utf8($texto) {
     return $texto;
 }
 ?>
-

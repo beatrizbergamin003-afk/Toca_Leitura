@@ -66,7 +66,7 @@ O sistema implementa operações **CRUD** (Create, Read, Update e Delete), valid
   - [6.2. Fluxo de Processo](#62-fluxo-de-processo)
 - [7. Protótipos](#7-protótipos)
   - [Baixa Fidelidade](#baixa-fidelidade)
-  - [Alta Fidelidade](#alta-fidelidade)
+  - [Baixa Fidelidade](#baixa-fidelidade)
 - [8. Contribuindo](#8-contribuindo)
 - [9. Contato & Suporte](#9-contato--suporte)
 
@@ -118,7 +118,7 @@ cd projetointegrador_tocaleitura
 
 #### Passo 2: Configurar o Banco de Dados
 
-O projeto utiliza o banco de dados `toca_leitura`. Toda a estrutura e os dados iniciais estão no arquivo `database/dumpTocaLeitura.sql`.
+O projeto utiliza o banco de dados `toca_leitura`. Toda a estrutura e os dados iniciais estão no arquivo `dumpTocaLeitura.sql`.
 
 1. Acesse o PostgreSQL com o usuário padrão:
 
@@ -133,7 +133,7 @@ CREATE DATABASE toca_leitura
     WITH ENCODING = 'UTF8';
 ```
 
-> [!WARNING]
+
 > Se o banco já existir e você realmente quiser recriá-lo, faça backup dos dados e remova-o antes de executar o comando acima.
 
 3. Crie o usuário da aplicação e transfira a propriedade do banco para ele:
@@ -147,7 +147,7 @@ ALTER DATABASE toca_leitura OWNER TO raposa;
 4. Na raiz do projeto, importe a estrutura e os dados iniciais:
 
 ```bash
-psql -U raposa -h localhost -d toca_leitura -f database/dumptocaLeitura.sql
+psql -U raposa -h localhost -d toca_leitura -f dump_tocaLeitura.sql
 ```
 
 
@@ -165,7 +165,7 @@ $host     = 'localhost';
 $port     = '5432';
 $dbname   = 'toca_leitura';
 $user     = 'raposa';
-$password = 'raposa123'; // Altere para a senha definida no Passo 2
+$password = 'raposa123';
 
 $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
 
@@ -197,16 +197,16 @@ Para interromper o servidor, pressione `Ctrl + C` no terminal.
 
 ## 3. Estrutura de Diretórios
 
-```
+````
+
 projetointegrador_tocaleitura
 ├── .gitignore
+├── dump_tocaLeitura.sql
 ├── README.md
 ├── config
 │   └── db.php
 ├── css
 │   └── style.css
-├── database
-│   └── dumpTocaLeitura.sql
 ├── img_site
 │   ├── logo_toca.png
 │   └── logo.png
@@ -228,7 +228,7 @@ projetointegrador_tocaleitura
     ├── logout.php
     ├── procurar.php
     └── resenhas.php
-```
+    ````
 
 ---
 
@@ -252,8 +252,8 @@ projetointegrador_tocaleitura
 | **RF12** | Ranking de Leitura | Exibir os livros mais lidos quando não houver filtros ativos | Média | ✅ |
 | **RF13** | Publicações no Feed | Permitir opiniões e organizar publicações por categorias | Alta | ✅ |
 | **RF14** | Exclusão de Publicações | Permitir que leitores excluam suas próprias postagens | Média | ✅ |
-| **RF15** | Resenhas em Vídeo | Incorporar vídeos do YouTube na página de resenhas | Média | ✅ |
-| **RF16** | Contato | Permitir o envio de dúvidas e sugestões à equipe | Baixa | ✅ |
+| **RF15** | Resenhas em Vídeo | Incorporar vídeos do YouTube na página de resenhas | Alta | ✅ |
+| **RF16** | Contato | Permitir o envio de dúvidas e sugestões à equipe | Alta | ✅ |
 | **RF17** | Painel Administrativo | Disponibilizar uma interface de administração restrita | Alta | ✅ |
 | **RF18** | Moderação | Permitir o gerenciamento de contas, permissões e publicações | Alta | ✅ |
 
@@ -368,7 +368,7 @@ Registra dúvidas e sugestões enviadas à equipe.
 | Campo | Tipo | Restrições | Descrição |
 |-------|------|-----------|-----------|
 | `id` | INTEGER | PRIMARY KEY GENERATED ALWAYS AS IDENTITY | Identificador da mensagem |
-| `usuario_id` | INTEGER | FK → `usuarios(id)` ON DELETE SET NULL | Usuário associado à mensagem (opcional) |
+| `usuario_id` | INTEGER | FK → `usuarios(id)` ON DELETE SET NULL | Usuário associado à mensagem |
 | `nome` | VARCHAR(255) | NOT NULL | Nome do remetente |
 | `email` | VARCHAR(255) | NOT NULL | E-mail para resposta |
 | `assunto` | VARCHAR(255) | | Assunto da mensagem |
@@ -406,7 +406,7 @@ Armazena os itens vinculados a cada pedido.
 - Um usuário pode possuir vários registros de leitura.
 - Um usuário pode publicar várias postagens.
 - Um usuário pode realizar vários pedidos.
-- Um usuário pode estar associado a várias mensagens de contato (opcional).
+- Um usuário pode estar associado a várias mensagens de contato.
 - Um pedido contém um ou mais itens.
 - Um livro pode estar associado a vários itens de pedido.
 
@@ -565,9 +565,10 @@ Os protótipos foram concebidos para orientar a estrutura visual e a experiênci
 
 ### Baixa Fidelidade
 
-Desenvolvida no **Excalidraw**, apresenta a organização inicial das telas, os componentes principais e a disposição dos elementos da interface.
+Desenvolvida no **Figma**, apresenta a organização inicial das telas, os componentes principais e a disposição dos elementos da interface.
 
-- [Veja aqui - Excalidraw](#) <!-- Substitua # pelo link público do Excalidraw -->
+
+- [Veja aqui - Figma](https://www.figma.com/design/KhYrD2I4Na1ZsM2SkKtQpK/A-Toca-Liter%C3%A1ria?node-id=0-1&t=oUdD56zGRyek6sOF-1)
 
 ---
 
@@ -595,7 +596,7 @@ Contribuições são bem-vindas! Para propor melhorias, corrigir problemas ou ad
 
 <div align="center">
 
-Desenvolvido com dedicação para incentivar a leitura e aproximar leitores. 📚
+Desenvolvido com dedicação para incentivar a leitura e aproximar leitores. 
 
 **A Toca de Leitura**
 

@@ -1,5 +1,6 @@
 
 <?php 
+// Carrega a conexão com o banco de dados e as configurações do sistema
 require_once __DIR__ . '/../config/db.php';
 
 // Bloqueia o acesso de visitantes que não fizeram login
@@ -7,17 +8,19 @@ if (function_exists('verificar_autenticacao')) {
     verificar_autenticacao();
 } else {
     iniciar_sessao();
+    // Se o leitor não estiver logado, redireciona direto para a página de login
     if (empty($_SESSION['usuario_id'])) {
         header('Location: login.php');
         exit;
     }
 }
 
+// Captura os dados do leitor autenticado na sessão
 $usuario_id   = $_SESSION['usuario_id'];
 $usuario_nome = $_SESSION['usuario_nome'] ?? 'Leitor';
 $mensagem     = '';
 
-// Lista oficial de gêneros permitidos
+// Lista oficial de gêneros permitidos na estante do site
 $generos_validos = defined('GENEROS_VALIDOS') ? GENEROS_VALIDOS : [
     'Romance', 
     'Ficção', 
@@ -55,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("O livro '" . htmlspecialchars($livro_nome) . "' não consta no catálogo do site. Cadastre apenas livros disponíveis!");
                 }
             } else {
+                // Checa no banco se o título bate com algum livro do acervo oficial
                 $stmt_check = $pdo->prepare("SELECT id FROM livros WHERE LOWER(TRIM(titulo)) = LOWER(TRIM(?)) LIMIT 1");
                 $stmt_check->execute([$livro_nome]);
                 if (!$stmt_check->fetch()) {
@@ -74,13 +78,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            // Calcula a porcentagem de leitura garantindo o limite de 100%
             $progresso_pct = min(100, (int)round(($paginas_lidas / $total_paginas) * 100));
 
+            // Insere o novo livro no histórico do leitor
             $sql = "INSERT INTO historico_leitura (usuario_id, livro_nome, genero, tempo_leitura, paginas_lidas, total_paginas, progresso_pct) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$usuario_id, $livro_nome, $genero, $tempo_leitura, $paginas_lidas, $total_paginas, $progresso_pct]);
 
+            // Redireciona para atualizar a página limpando os dados enviados do formulário
             header("Location: estante.php?sucesso=adicionado");
             exit;
 
@@ -96,8 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $total_paginas = (int)($_POST['total_paginas'] ?? 0);
 
         if ($id > 0 && $total_paginas > 0) {
+            // Recalcula a porcentagem lida
             $progresso_pct = min(100, (int)round(($paginas_lidas / $total_paginas) * 100));
 
+            // Atualiza as páginas e a data de alteração no banco
             $sql = "UPDATE historico_leitura 
                     SET paginas_lidas = ?, total_paginas = ?, progresso_pct = ?, atualizado_em = CURRENT_TIMESTAMP 
                     WHERE id = ? AND usuario_id = ?";
@@ -114,6 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)($_POST['id'] ?? 0);
 
         if ($id > 0) {
+            // Remove o livro garantindo que pertence ao usuário logado
             $stmt = $pdo->prepare("DELETE FROM historico_leitura WHERE id = ? AND usuario_id = ?");
             $stmt->execute([$id, $usuario_id]);
 
@@ -126,11 +136,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================================
 // CONSULTAR REGISTROS DA TABELA historico_leitura
 // ============================================================
+// Busca todas as leituras cadastradas para o usuário logado, do mais recente para o mais antigo
 $stmt = $pdo->prepare("SELECT * FROM historico_leitura WHERE usuario_id = ? ORDER BY atualizado_em DESC");
 $stmt->execute([$usuario_id]);
 $leituras = $stmt->fetchAll();
 
-// Cálculo Dinâmico de Métricas
+// Cálculo Dinâmico de Métricas para os Cards
 $total_lendo = 0;
 $total_lidos = 0;
 $total_quero = 0;
@@ -146,9 +157,10 @@ foreach ($leituras as $item) {
     }
 }
 
-// Filtro de aba selecionada
+// Pega o filtro de aba vindo na URL (Geral, Lendo, Lido, Não Iniciado)
 $status_filtro = $_GET['status'] ?? 'todos';
 
+// Inclui o topo e o menu de navegação do site
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -163,7 +175,7 @@ require_once __DIR__ . '/../includes/header.php';
             <p>Bem-vindo(a), <strong><?= htmlspecialchars(function_exists('fix_utf8') ? fix_utf8($usuario_nome) : $usuario_nome); ?></strong>! Acompanhe o progresso do seu histórico literário.</p>
         </div>
 
-        <!-- MENSAGENS DE FEEDBACK VISUAL -->
+        <!-- MENSAGENS DE FEEDBACK VISUAL (VERDE PARA SUCESSO) -->
         <?php if (isset($_GET['sucesso'])): ?>
             <div style="background-color: #DCFCE7; color: #15803D; padding: 12px 18px; border-radius: 12px; border: 1px solid #86EFAC; margin-bottom: 20px; font-weight: 800; text-align: center;">
                 <?php if ($_GET['sucesso'] === 'adicionado'): ?>
@@ -176,13 +188,14 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         <?php endif; ?>
 
+        <!-- MENSAGEM DE ALERTA OU ERRO (AMARELO) -->
         <?php if (!empty($mensagem)): ?>
             <div style="background-color: #FEF3C7; color: #B45309; padding: 12px 18px; border-radius: 12px; border: 1px solid #FCD34D; margin-bottom: 20px; font-weight: 800; text-align: center;">
                 <?= htmlspecialchars($mensagem); ?>
             </div>
         <?php endif; ?>
 
-        <!-- MÉTRICAS DE LEITURA -->
+        <!-- CARDS DE MÉTRICAS DA ESTANTE -->
         <div class="estante-stats">
             <div class="stat-box">
                 <span class="numero"><?= $total_lendo; ?></span>
@@ -221,6 +234,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <label for="genero">Gênero:</label>
                         <select id="genero" name="genero" required>
                             <option value="">-- Selecione um Gênero --</option>
+                            <!-- Percorre a lista de gêneros permitidos -->
                             <?php foreach ($generos_validos as $g): ?>
                                 <option value="<?= $g; ?>"><?= $g; ?></option>
                             <?php endforeach; ?>
@@ -262,17 +276,18 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- GRID DE LIVROS DO HISTÓRICO -->
         <?php if (!empty($leituras)): ?>
             <div class="estante-grid">
+                <!-- Percorre e renderiza cada livro no histórico -->
                 <?php foreach ($leituras as $item): 
                     $pct           = (int)($item['progresso_pct'] ?? 0);
                     $paginas_lidas = (int)($item['paginas_lidas'] ?? 0);
                     $total_paginas = (int)($item['total_paginas'] ?? 1);
 
-                    // Aplica o filtro selecionado
+                    // Aplica o filtro selecionado na aba
                     if ($status_filtro === 'lendo' && ($pct <= 0 || $pct >= 100)) continue;
                     if ($status_filtro === 'lido' && $pct < 100) continue;
                     if ($status_filtro === 'nao_iniciado' && $pct > 0) continue;
 
-                    // Determina o status visual
+                    // Determina a etiqueta visual de acordo com o progresso
                     if ($pct >= 100) {
                         $status_classe = 'status-lido';
                         $status_label  = 'Concluído';
@@ -301,7 +316,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php endif; ?>
                         </div>
 
-                        <!-- BARRA DE PROGRESSO DA LEITURA -->
+                        <!-- BARRA VISUAL DE PROGRESSO -->
                         <div class="progresso-container">
                             <div class="progresso-texto">
                                 <span><?= $paginas_lidas; ?> / <?= $total_paginas; ?> pág.</span>
@@ -312,7 +327,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                         </div>
 
-                        <!-- ATUALIZAR PROGRESSO DE PÁGINAS -->
+                        <!-- FORMULÁRIO RÁPIDO PARA ATUALIZAR PÁGINAS -->
                         <form action="estante.php" method="POST" style="margin-top: 12px; background-color: #FAF5FF; padding: 10px; border-radius: 10px; border: 1px solid var(--border-soft);">
                             <input type="hidden" name="acao" value="atualizar">
                             <input type="hidden" name="id" value="<?= $item['id']; ?>">
@@ -324,7 +339,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                         </form>
 
-                        <!-- BOTÃO DE REMOVER -->
+                        <!-- FORMULÁRIO PARA REMOVER O LIVRO DA ESTANTE -->
                         <form action="estante.php" method="POST" style="margin-top: 10px; text-align: right;" onsubmit="return confirm('Deseja realmente remover este livro da sua estante?');">
                             <input type="hidden" name="acao" value="remover">
                             <input type="hidden" name="id" value="<?= $item['id']; ?>">
@@ -336,6 +351,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
+            <!-- MENSAGEM QUANDO A ESTANTE ESTÁ VAZIA -->
             <div class="estante-vazia">
                 <p>Nenhum livro cadastrado no seu histórico de leitura ainda.</p>
                 <p style="font-size: 13px; color: var(--text-muted);">Utilize o formulário acima para registrar suas primeiras leituras!</p>
@@ -346,5 +362,5 @@ require_once __DIR__ . '/../includes/header.php';
 
 </main>
 
+<!-- Carrega o rodapé do site -->
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-

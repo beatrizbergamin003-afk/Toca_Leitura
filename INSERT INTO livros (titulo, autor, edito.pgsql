@@ -54,31 +54,49 @@ INSERT INTO livros (titulo, autor, editora, genero, preco, estrelas, capa_url, t
 ('A Bolsa Amarela', 'Lygia Bojunga', 'Casa Lygia Bojunga', 'Literatura Infantil', 34.90, 4.8, 'https://imgs.search.brave.com/p4yFPEUsuf9wLgWb6bBjeqSsI5b-H93ODeuL1EqyWS4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9odHRw/Mi5tbHN0YXRpYy5j/b20vRF9RX05QXzJY/XzczMDgwNS1NTEI0/NjUwNjEyNTc4Nl8w/NjIwMjEtRS53ZWJw', 3100),
 ('Reinações de Narizinho', 'Monteiro Lobato', 'Globo Livros', 'Literatura Infantil', 44.90, 4.8, 'https://imgs.search.brave.com/k4w0vBJ3ZQYN5N0mwrwV7t6_92NilvqDf71aQpoUxT8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9odHRw/Mi5tbHN0YXRpYy5j/b20vRF9RX05QXzJY/XzkxNjg1OC1NTFU1/MDQ1NDU4Mjc0OV8w/NjIwMjItRS53ZWJw', 3800);
 
+```sql
+
+-- Define o link da imagem da capa diretamente para o livro "Binding 13"
 UPDATE livros 
-SET capa_url = 'https://imgs.search.brave.com/EYFO9bdte0fS09UyULu3nS25Q5-SN6t1l6fJv0lKMSs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9odHRw/Mi5tbHN0YXRpYy5j/b20vRF9OUV9OUF85/MDc3ODMtTUxBODIx/NzM2MTg5NjJfMDIy/MDI1LU8ud2VicA' 
+SET capa_url = 'https://imgs.search.brave.com/EYFO9bdte0fS09UyULu3nS25Q5-SN6t1l6fJv0lKMSs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9odHRw/Mi5tbHN0YXRpYy5j/b20vRF9OUV9OUF85/MDc3ODMtTUxBODIx/NzM2MTg5NjJfMDIy/MDI1LU8ud2WebA' 
 WHERE titulo = 'Binding 13';
 
+
+-- Altera o tipo do campo capa_url para TEXT, permitindo armazenar links mais longos sem estourar o limite de caracteres
 ALTER TABLE livros 
 ALTER COLUMN capa_url TYPE text;
 
+
+-- Apaga todos os livros pertencentes ao gênero "Fantasia"
 DELETE FROM livros WHERE genero = 'Fantasia';   
 
+
+-- Traz todos os livros e suas colunas cadastradas no banco
 SELECT * FROM livros;
 
+
+-- Apaga instantaneamente todos os registros da tabela de livros (esvazia o acervo)
 TRUNCATE TABLE livros;
 
+
+-- Remove os livros marcados com o gênero "Ficção"
 DELETE FROM livros WHERE genero = 'Ficção';
 
+-- Remove os livros marcados com o gênero "Suspense"
 DELETE FROM livros WHERE genero = 'Suspense';
 
+
+-- Conta o total de registros mantidos na tabela de livros
 SELECT COUNT(*) AS total FROM livros;
 
+-- Agrupa os livros pelo título para identificar a quantidade de exemplares cadastrados para cada obra
 SELECT 
     titulo,
     COUNT(*) AS quantidade
 FROM livros
 GROUP BY titulo
 ORDER BY quantidade DESC;
+
 
 
 CREATE TABLE mensagens_contato (
