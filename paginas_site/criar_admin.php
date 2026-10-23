@@ -10,8 +10,8 @@ if (!defined('BASE_URL')) {
 
 // Dados iniciais para a criação ou atualização do usuário administrador
 $nome  = "Administrador";
-$email = "admintoca@gmail.com";
-$senha = "123456"; // Altere para a senha que quiser usar
+$email = "admin3@gmail.com";
+$senha = "123"; // Altere para a senha que quiser usar
 
 // Criptografa a senha usando hash seguro (Bcrypt) antes de salvar no banco
 $senha_hash = password_hash($senha, PASSWORD_DEFAULT);

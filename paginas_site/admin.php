@@ -41,9 +41,11 @@ if (isset($pdo)) {
     try { $total_pedidos   = (int)$pdo->query("SELECT COUNT(*) FROM pedidos")->fetchColumn(); } catch (Throwable $e) {}
 }
 
-// Ajusta a acentuação UTF-8 do nome do administrador logado
+// Ajusta a acentuação UTF-8 do nome do administrador logado de forma segura
 $admin_nome_raw = $_SESSION['usuario_nome'] ?? 'Admin';
-$admin_nome     = mb_convert_encoding($admin_nome_raw, 'UTF-8', 'ISO-8859-1');
+$admin_nome     = function_exists('mb_convert_encoding') 
+    ? mb_convert_encoding($admin_nome_raw, 'UTF-8', 'ISO-8859-1') 
+    : $admin_nome_raw;
 
 // Carrega o topo e o menu do site
 require_once __DIR__ . '/../includes/header.php';

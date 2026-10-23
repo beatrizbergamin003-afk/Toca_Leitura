@@ -16,7 +16,7 @@
 
 ##  Sobre o projeto
 
-Desenvolvida em **PHP 8.2 ou superior**, com **PostgreSQL** como sistema gerenciador de banco de dados, **A Toca de Leitura** é uma aplicação web que integra diferentes etapas da jornada literária.
+Desenvolvida em **PHP 8.2 ou superior**, com **PostgreSQL** como sistema gerenciador de banco de dados, **A Toca de Leitura** é uma aplicação web que integra diferentes etapas da jornada php -S 0.0.0.0:8000   literária.
 
 A plataforma conecta a descoberta e a aquisição de livros ao acompanhamento de hábitos de leitura, à organização de uma estante virtual e ao compartilhamento de experiências em uma comunidade de leitores.
 

@@ -1,4 +1,3 @@
-
 <?php
 // Importa o arquivo db.php de forma única para carregar o banco e as funções
 require_once __DIR__ . '/../config/db.php';
